@@ -20,10 +20,14 @@ class XapianDb
     @ro ||= setup_ro_db
   end
 
-
   # Return the number of docs in the Xapian database
   def size
     ro.doccount
+  end
+
+  # Return the XapianDocumentsAccessor for this database
+  def documents
+    @documents_accessor ||= XapianDocumentsAccessor.new(self)
   end
 
   # Add a document to the index. A document can be just a hash, the
@@ -121,14 +125,34 @@ class XapianDb
     end
   end
 
+  class XapianDocumentsAccessor
+    def initialize(xdb)
+      @xdb = xdb
+    end
+
+    def [](doc_id)
+      xdoc = @xdb.ro.document(doc_id)
+      XapianDoc.new(xdoc)
+    end
+  end
+
+
 end
 
 class XapianDoc
   attr_reader :fields, :data
   def initialize(fields, options = {})
-    @fields = fields
-    @weight = options[:weight] if options[:weight]
-    @data = options[:data] if options[:data]
+    if fields.is_a?(Xapian::Document)
+      begin
+        @data = Marshal::load(fields.data) unless fields.data.empty?
+      rescue ArgumentError
+        @data = nil
+      end
+    else
+      @fields = fields
+      @weight = options[:weight] if options[:weight]
+      @data = options[:data] if options[:data]
+    end
   end
 end
 
