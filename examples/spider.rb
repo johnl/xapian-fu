@@ -15,7 +15,7 @@ Dir.glob(File.join(base_path, "/**/*")) do |filename|
   next unless filename =~ /\.(txt|doc|README|c|h|rb|py|note|xml)$/i
   puts "Indexing #{filename}"
   text = File.open(filename) { |f| f.read(10 * 1024) }
-  Benchmark.measure do
+  bm = Benchmark.measure do
     db << XapianDoc.new({:text => text}, :data => { :filename => filename, :filesize => File.size(filename) })
   end
   indexing_time += bm.total
