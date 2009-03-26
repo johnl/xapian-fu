@@ -4,7 +4,7 @@ class XapianDb
   include Xapian
   attr_reader :dir, :db_flag, :query_parser
 
-  def initialize( options )
+  def initialize( options = { } )
     @dir = options[:dir]
     @db_flag = DB_OPEN
     @db_flag = DB_CREATE_OR_OPEN if options[:create]
@@ -12,25 +12,50 @@ class XapianDb
   end
 
   # Return the writable Xapian database
-  def db
-    @db ||= WritableDatabase.new(dir, db_flag)
+  def rw
+    @rw ||= setup_rw_db
   end
 
-  # Add a document to the index. A document is just a hash, the keys representing
-  # field names and their values the data to be indexed.
+  def ro
+    @ro ||= setup_ro_db
+  end
+
+
+  # Return the number of docs in the Xapian database
+  def size
+    ro.doccount
+  end
+
+  # Add a document to the index. A document can be just a hash, the
+  # keys representing field names and their values the data to be
+  # indexed.  Or it can be a XapianDoc, or any object with a to_s method.
   # 
-  # Any value stored with the special key :data is marhalled and stored in the 
-  # Xapian database.  Any arbitrary data up to Xmeg can be stored here.  This is
-  # often used to store a reference to another data storage system, such as the
+  # If the document object reponds to the method :data, whatever it
+  # returns is marshalled and stored in the  Xapian database.  Any
+  # arbitrary data up to Xmeg can be stored here.  This is often used
+  # to store a reference to another data storage system, such as the
   # primary key of an SQL database table.
   def add_doc(doc)
     xdoc = Document.new
-    xdoc.data = Marshal.dump(doc.data) if doc.data
+    if doc.respond_to?(:data) and doc.data
+      xdoc.data = Marshal.dump(doc.data)
+    end
     tg = TermGenerator.new
-    tg.database = db
+    tg.database = rw
     tg.document = xdoc
-    tg.index_text( doc.fields.keys.collect { |k| doc.fields[k] }.join(' ') )
-    db.add_document(xdoc)
+
+    if doc.respond_to?(:fields)
+      fields = doc.fields
+    elsif doc.is_a? Hash
+      fields = doc
+    else
+      fields = { :content => doc.to_s }
+    end
+
+    content = fields.keys.collect { |k| fields[k] }.join(' ')
+      
+    tg.index_text( content )
+    rw.add_document(xdoc)
   end
   alias_method "<<", :add_doc
 
@@ -61,20 +86,41 @@ class XapianDb
 
   # Flush any changes to disk.
   def flush
-    db.flush
+    rw.flush
   end
 
   def query_parser
     unless @query_parser
       @query_parser = QueryParser.new
-      @query_parser.database = db
+      @query_parser.database = ro
     end
     @query_parser
   end 
 
   def enquiry
-    @enquiry ||= Enquire.new(db)
+    @enquiry ||= Enquire.new(ro)
   end
+
+  private
+
+  def setup_rw_db
+    if dir
+      @rw = WritableDatabase.new(dir, db_flag)
+    else
+      # In memory database
+      @rw = inmemory_open
+    end
+  end
+
+  def setup_ro_db
+    if dir
+      @ro = Database.new(dir)
+    else
+      # In memory db
+      @ro = rw
+    end
+  end
+
 end
 
 class XapianDoc
