@@ -5,7 +5,7 @@ require 'benchmark'
 require 'lib/xapian_fu'
 
 query_string = ARGV.join(" ")
-db = XapianDb.new(:dir => 'spider.db')
+db = XapianFu::XapianDb.new(:dir => 'spider.db')
 results = nil
 bm = Benchmark.measure { results = db.search(query_string) }
 puts "Score\tFilename"
