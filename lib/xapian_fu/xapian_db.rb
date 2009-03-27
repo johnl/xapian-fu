@@ -41,29 +41,13 @@ module XapianFu
     # to store a reference to another data storage system, such as the
     # primary key of an SQL database table.
     def add_doc(doc)
-      xdoc = Xapian::Document.new
-      if doc.respond_to?(:data) and doc.data
-        xdoc.data = Marshal.dump(doc.data)
-      end
+      doc = XapianDoc.new(doc) unless doc.is_a? XapianDoc
+      xdoc = doc.to_xapian_document
       tg = Xapian::TermGenerator.new
       tg.database = rw
       tg.document = xdoc
 
-      if doc.respond_to?(:fields)
-        fields = doc.fields
-      elsif doc.is_a? Hash
-        fields = doc
-      else
-        fields = { :content => doc.to_s }
-      end
-      
-      if fields.respond_to?(:keys)
-        content = fields.keys.collect { |k| fields[k] }.join(' ')
-      else
-        content = fields.to_s
-      end
-      
-      tg.index_text( content )
+      tg.index_text( doc.text )
       xdoc_id = rw.add_document(xdoc)
       if doc.is_a? XapianDoc
         doc.id = xdoc_id
