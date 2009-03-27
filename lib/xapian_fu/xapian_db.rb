@@ -1,17 +1,15 @@
-require 'xapian'
-require 'xapian_doc'
-
 module XapianFu
+  require 'xapian'
+  require 'xapian_doc'
 
   class XapianDb
-    include Xapian
     attr_reader :dir, :db_flag, :query_parser
 
     def initialize( options = { } )
       @dir = options[:dir]
-      @db_flag = DB_OPEN
-      @db_flag = DB_CREATE_OR_OPEN if options[:create]
-      @db_flag = DB_CREATE_OR_OVERWRITE if options[:overwrite]
+      @db_flag = Xapian::DB_OPEN
+      @db_flag = Xapian::DB_CREATE_OR_OPEN if options[:create]
+      @db_flag = Xapian::DB_CREATE_OR_OVERWRITE if options[:overwrite]
     end
 
     # Return the writable Xapian database
@@ -43,11 +41,11 @@ module XapianFu
     # to store a reference to another data storage system, such as the
     # primary key of an SQL database table.
     def add_doc(doc)
-      xdoc = Document.new
+      xdoc = Xapian::Document.new
       if doc.respond_to?(:data) and doc.data
         xdoc.data = Marshal.dump(doc.data)
       end
-      tg = TermGenerator.new
+      tg = Xapian::TermGenerator.new
       tg.database = rw
       tg.document = xdoc
 
@@ -71,7 +69,7 @@ module XapianFu
     def search(q, options = {})
       defaults = { :offset => 0, :limit => 10 }
       options = defaults.merge(options)
-      query = query_parser.parse_query(q, QueryParser::FLAG_WILDCARD && QueryParser::FLAG_LOVEHATE)
+      query = query_parser.parse_query(q, Xapian::QueryParser::FLAG_WILDCARD && Xapian::QueryParser::FLAG_LOVEHATE)
       enquiry.query = query
       enquiry.mset(options[:offset], options[:limit]).matches.collect { |m| XapianResult.new(m) }
     end
@@ -98,30 +96,30 @@ module XapianFu
 
     def query_parser
       unless @query_parser
-        @query_parser = QueryParser.new
+        @query_parser = Xapian::QueryParser.new
         @query_parser.database = ro
       end
       @query_parser
     end 
 
     def enquiry
-      @enquiry ||= Enquire.new(ro)
+      @enquiry ||= Xapian::Enquire.new(ro)
     end
 
     private
 
     def setup_rw_db
       if dir
-        @rw = WritableDatabase.new(dir, db_flag)
+        @rw = Xapian::WritableDatabase.new(dir, db_flag)
       else
         # In memory database
-        @rw = inmemory_open
+        @rw = Xapian::inmemory_open
       end
     end
 
     def setup_ro_db
       if dir
-        @ro = Database.new(dir)
+        @ro = Xapian::Database.new(dir)
       else
         # In memory db
         @ro = rw
