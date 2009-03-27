@@ -66,7 +66,7 @@ module XapianFu
       options = defaults.merge(options)
       query = query_parser.parse_query(q, Xapian::QueryParser::FLAG_WILDCARD && Xapian::QueryParser::FLAG_LOVEHATE)
       enquiry.query = query
-      enquiry.mset(options[:offset], options[:limit]).matches.collect { |m| XapianResult.new(m) }
+      enquiry.mset(options[:offset], options[:limit]).matches.collect { |m| XapianDoc.new(m) }
     end
 
     # Run the given block in a XapianDB transaction.  Any changes to the 

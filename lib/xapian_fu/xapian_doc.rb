@@ -1,11 +1,17 @@
 module XapianFu
   class XapianDoc
-    attr_reader :fields, :data, :weight
+    attr_reader :fields, :data, :weight, :match
     attr_accessor :id, :db
     def initialize(doc, options = {})
       @fields = {}
       # Handle initialisation from a Xapian::Document, which is
       # usually a search result from a Xapian database
+      if doc.is_a? Xapian::Match
+        match = doc
+        doc = match.document
+        @match = match
+        @weight = @match.weight
+      end
       if doc.is_a?(Xapian::Document)
         @id = doc.docid
         # @weight = doc.weight

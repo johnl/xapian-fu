@@ -87,4 +87,16 @@ describe XapianDb do
     doc.terms.last.should be_a_kind_of Xapian::Term
     doc.terms.last.term.should == "upon"
   end
+
+  it "should return a list of XapianDocs with the weight and match set when returning search results" do
+    xdb = XapianDb.new
+    xdb << XapianDoc.new(:title => 'once upon a time')
+    xdb << XapianDoc.new(:title => 'three little pings')
+    results = xdb.search("pings")
+    results.should be_a_kind_of Array
+    results.size.should == 1
+    results.first.should be_a_kind_of XapianDoc
+    results.first.match.should be_a_kind_of Xapian::Match
+    results.first.weight.should be_a_kind_of Float
+  end
 end
