@@ -56,11 +56,21 @@ module XapianFu
       else
         fields = { :content => doc.to_s }
       end
-
-      content = fields.keys.collect { |k| fields[k] }.join(' ')
+      
+      if fields.respond_to?(:keys)
+        content = fields.keys.collect { |k| fields[k] }.join(' ')
+      else
+        content = fields.to_s
+      end
       
       tg.index_text( content )
-      rw.add_document(xdoc)
+      xdoc_id = rw.add_document(xdoc)
+      if doc.is_a? XapianDoc
+        doc.id = xdoc_id
+        doc
+      else
+        xdoc
+      end
     end
     alias_method "<<", :add_doc
 

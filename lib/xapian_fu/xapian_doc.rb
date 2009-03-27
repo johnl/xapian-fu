@@ -1,21 +1,28 @@
 module XapianFu
   class XapianDoc
-    attr_reader :fields, :data, :id
-    def initialize(fields, options = {})
-      if fields.is_a?(Xapian::Document)
+    attr_reader :fields, :data, :weight, :db
+    attr_accessor :id
+    def initialize(doc, options = {})
+      if doc.is_a?(Xapian::Document)
+          @id = doc.docid
+          # @weight = doc.weight
         begin
-          xdoc = fields
-          @data = Marshal::load(xdoc.data) unless xdoc.data.empty?
-          @id = xdoc.docid
+          @data = Marshal::load(doc.data) unless doc.data.empty?
         rescue ArgumentError
           @data = nil
         end
+      elsif doc.respond_to?("[]")
+        @fields = doc
+        @id = doc[:id] if doc.respond_to?(:has_key?) and doc.has_key?(:id)
       else
-        @fields = fields
-        @id = fields[:id] if fields.has_key?(:id)
-        @weight = options[:weight] if options[:weight]
-        @data = options[:data] if options[:data]
+        @fields = { :content => doc.to_s }
       end
+      @weight = options[:weight] if options[:weight]
+      @data = options[:data] if options[:data]
+    end
+
+    def terms
+      db.terms(id) if db and id
     end
   end
 end

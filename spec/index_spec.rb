@@ -37,8 +37,10 @@ describe XapianDb do
   it "should index a string" do
     xdb = XapianDb.new
     xdb << "once upon a time"
-    xdb.flush
     xdb.size.should == 1
+    xdb << XapianDoc.new("once upon a time")
+    xdb.size.should == 2
+    
   end
 
   it "should retrieve documents like an array and return a XapianDoc" do
@@ -50,18 +52,29 @@ describe XapianDb do
 
   it "should provide the id of retrieved documents" do
     xdb = XapianDb.new
-    xdb << "once upton a time"
-    xdb.flush
+    xdb << "once upon a time"
     xdb.documents[1].id.should == 1
   end
 
   it "should store data in the database" do
     xdb = XapianDb.new
     xdb << XapianDoc.new({ :text => "once upon a time" }, :data => { :thing => 0xdeadbeef })
-    xdb.flush
     xdb.size.should == 1
     doc = xdb.documents[1]
     doc.data.should == { :thing => 0xdeadbeef }
+  end
+
+  it "should return a XapianDoc with an id after indexing" do
+    xdb = XapianDb.new
+    doc = XapianDoc.new("once upon a time")
+    doc.id.should == nil
+    new_doc = xdb << doc
+    new_doc.id.should == 1
+  end
+
+  it "should tokenize documents" do
+    xdb = XapianDb.new
+    xdb << XapianDoc.new("once upon a time")
   end
 
 end
