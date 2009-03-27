@@ -62,11 +62,15 @@ module XapianFu
     # Conduct a search on the Xapian database, returning an array of 
     # XapianResult objects
     def search(q, options = {})
-      defaults = { :offset => 0, :limit => 10 }
+      defaults = { :page => 1, :per_page => 10 }
       options = defaults.merge(options)
+      page = options[:page].to_i rescue 1
+      page = page > 1 ? page - 1 : 0
+      per_page = options[:per_page].to_i rescue 10
+      offset = page * per_page
       query = query_parser.parse_query(q, Xapian::QueryParser::FLAG_WILDCARD && Xapian::QueryParser::FLAG_LOVEHATE)
       enquiry.query = query
-      enquiry.mset(options[:offset], options[:limit]).matches.collect { |m| XapianDoc.new(m) }
+      enquiry.mset(offset, per_page).matches.collect { |m| XapianDoc.new(m) }
     end
 
     # Run the given block in a XapianDB transaction.  Any changes to the 
@@ -134,17 +138,4 @@ module XapianFu
     end
   end
 
-
-  # A XapianResult objects represents a document in the Xapian DB that matched
-  # a query.
-  class XapianResult
-    attr_reader :score, :percent, :doc, :data, :id
-    def initialize(match)
-      @score = match.weight
-      @percent = match.percent
-      @doc = match.document
-      @id = @doc.docid
-      @data = Marshal.load(@doc.data) unless @doc.data.empty?
-    end
-  end
 end

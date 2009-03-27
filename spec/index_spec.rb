@@ -99,4 +99,22 @@ describe XapianDb do
     results.first.match.should be_a_kind_of Xapian::Match
     results.first.weight.should be_a_kind_of Float
   end
+
+  it "should support searching with :page and :per_page options" do
+    xdb = XapianDb.new
+    words = (0..20).collect { |i| "word#{i}" }
+    content = words.join(' ')
+    200.times do
+      xdb << XapianDoc.new(content)
+    end
+    xdb.size.should == 200
+    results = xdb.search(words.first, :page => 1, :per_page => 12)
+    results.first.id.should == 1
+    results.size.should == 12
+    results = xdb.search(words.first, :page => 5, :per_page => 18)
+    results.first.id.should == 18 * 4 + 1
+    results.size.should == 18
+    results = xdb.search(words.first, :page => 100, :per_page => 12)
+    results.size.should == 0
+  end
 end
