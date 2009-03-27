@@ -1,5 +1,6 @@
 require 'xapian'
 require 'lib/xapian_fu.rb'
+include XapianFu
 
 tmp_dir = '/tmp/xapian_fu_test.db'
 
