@@ -42,6 +42,7 @@ module XapianFu
     # primary key of an SQL database table.
     def add_doc(doc)
       doc = XapianDoc.new(doc) unless doc.is_a? XapianDoc
+      doc.db = self
       xdoc = doc.to_xapian_document
       tg = Xapian::TermGenerator.new
       tg.database = rw

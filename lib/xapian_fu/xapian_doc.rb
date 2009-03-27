@@ -1,7 +1,7 @@
 module XapianFu
   class XapianDoc
-    attr_reader :fields, :data, :weight, :db
-    attr_accessor :id
+    attr_reader :fields, :data, :weight
+    attr_accessor :id, :db
     def initialize(doc, options = {})
       @fields = {}
       # Handle initialisation from a Xapian::Document, which is
@@ -37,7 +37,7 @@ module XapianFu
 
     # Return a list of terms that the db has for this document
     def terms
-      db.terms(id) if db and id
+      db.ro.termlist(id) if db and db.respond_to?(:ro) and db.ro and id
     end
 
     # Return a Xapian::Document ready for putting into a Xapian database

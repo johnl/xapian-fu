@@ -72,9 +72,19 @@ describe XapianDb do
     new_doc.id.should == 1
   end
 
-  it "should tokenize documents" do
+  it "should tokenize strings" do
     xdb = XapianDb.new
-    xdb << XapianDoc.new("once upon a time")
+    doc = xdb << XapianDoc.new("once upon a time")
+    doc.terms.should be_a_kind_of Array
+    doc.terms.last.should be_a_kind_of Xapian::Term
+    doc.terms.last.term.should == "upon"
   end
 
+  it "should tokenize a hash" do
+    xdb = XapianDb.new
+    doc = xdb << XapianDoc.new(:title => 'once upon a time')
+    doc.terms.should be_a_kind_of Array
+    doc.terms.last.should be_a_kind_of Xapian::Term
+    doc.terms.last.term.should == "upon"
+  end
 end
