@@ -47,6 +47,13 @@ describe XapianDb do
     xdb.documents[1].should be_a_kind_of(XapianDoc)
   end
 
+  it "should provide the id of retrieved documents" do
+    xdb = XapianDb.new
+    xdb << "once upton a time"
+    xdb.flush
+    xdb.documents[1].id.should == 1
+  end
+
   it "should store data in the database" do
     xdb = XapianDb.new
     xdb << XapianDoc.new({ :text => "once upon a time" }, :data => { :thing => 0xdeadbeef })
