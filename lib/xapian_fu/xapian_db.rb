@@ -1,5 +1,5 @@
 require 'xapian'
-require 'lib/xapian_doc'
+require 'xapian_doc'
 
 module XapianFu
 
