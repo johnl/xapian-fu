@@ -2,26 +2,27 @@ module XapianFu
   class XapianDoc
     attr_reader :fields, :data, :weight, :match
     attr_accessor :id, :db
+
     def initialize(doc, options = {})
       @fields = {}
-      # Handle initialisation from a Xapian::Document, which is
-      # usually a search result from a Xapian database
       if doc.is_a? Xapian::Match
         match = doc
         doc = match.document
         @match = match
         @weight = @match.weight
       end
+
+      # Handle initialisation from a Xapian::Document, which is
+      # usually a search result from a Xapian database
       if doc.is_a?(Xapian::Document)
         @id = doc.docid
-        # @weight = doc.weight
         begin
           xdoc_data = Marshal::load(doc.data) unless doc.data.empty?
         rescue ArgumentError
           @data = nil
         end
         if xdoc_data.is_a? Hash
-          @data = xdoc_data.delete(:_data)
+          @data = xdoc_data.delete(:__data)
           @fields = xdoc_data
         else
           @data = xdoc_data
@@ -49,7 +50,9 @@ module XapianFu
     # Return a Xapian::Document ready for putting into a Xapian database
     def to_xapian_document
       xdoc = Xapian::Document.new
-      xdoc.data = Marshal.dump(fields.merge({ :_data => data })) if fields
+      stored_fields = fields.reject { |k,v| ! db.store_fields.include? k }
+      stored_fields[:__data] = data if data
+      xdoc.data = Marshal.dump(stored_fields) unless stored_fields.empty?
       xdoc
     end
 

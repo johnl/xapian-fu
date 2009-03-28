@@ -102,6 +102,20 @@ describe XapianDb do
     xdb.size.should == 2
   end
 
+  it "should raise a XapianFu::DocNotFound error on find if the document doesn't exist" do
+    xdb = XapianDb.new
+    xdb << "once upon a time"
+    xdb.flush
+    lambda { xdb.documents.find(10) }.should raise_error XapianFu::DocNotFound
+  end
+
+  it "should retrieve documents with the find method" do
+    xdb = XapianDb.new
+    xdb << "Once upon a time"
+    xdb.flush
+    xdb.documents.find(1).should be_a_kind_of(XapianDoc)
+  end
+
   it "should retrieve documents like an array and return a XapianDoc" do
     xdb = XapianDb.new
     xdb << "once upon a time"
@@ -141,6 +155,23 @@ describe XapianDb do
     xdb.flush
     xdb.size.should == 1
     updated_doc.id.should == doc.id
+  end
+
+  it "should delete docs by id" do
+    xdb = XapianDb.new
+    doc = xdb << XapianDoc.new("Once upon a time")
+    xdb.flush
+    xdb.size.should == 1
+    xdb.documents.delete(doc.id).should == 1
+    xdb.flush
+    xdb.size.should == 0
+  end
+
+  it "should handle being asked to delete docs that don't exist in the db" do
+    xdb = XapianDb.new
+    doc = xdb << XapianDoc.new("Once upon a time")
+    xdb.flush
+    xdb.documents.delete(100000).should == nil
   end
 
   it "should add new docs with the given id" do
@@ -192,5 +223,21 @@ describe XapianDb do
     results.size.should == 18
     results = xdb.search(content, :page => 100, :per_page => 12)
     results.size.should == 0
+  end
+
+  it "should store no fields by default" do
+    xdb = XapianDb.new
+    xdb << XapianDoc.new(:title => "Once upon a time")
+    xdb.flush
+    xdb.documents.find(1).fields[:title].should be_nil
+  end
+
+  it "should store fields declared as to be stored" do
+    xdb = XapianDb.new(:store => :title)
+    xdb << XapianDoc.new(:title => "Once upon a time", :author => "Jim Jones")
+    xdb.flush
+    doc = xdb.documents.find(1)
+    doc.fields[:title].should == "Once upon a time"
+    doc.fields[:author].should be_nil
   end
 end

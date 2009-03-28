@@ -5,15 +5,19 @@ module XapianFu
 
   class XapianFuError < StandardError ; end
   class ConcurrencyError < XapianFuError ; end
+  class DocNotFound < XapianFuError ; end
 
   class XapianDb
     attr_reader :dir, :db_flag, :query_parser
+    attr_reader :store_fields
 
     def initialize( options = { } )
       @dir = options[:dir]
       @db_flag = Xapian::DB_OPEN
       @db_flag = Xapian::DB_CREATE_OR_OPEN if options[:create]
       @db_flag = Xapian::DB_CREATE_OR_OVERWRITE if options[:overwrite]
+      @store_fields = []
+      @store_fields << options[:store]
       rw.flush if options[:create]
       @tx_mutex = Mutex.new
     end
@@ -147,9 +151,33 @@ module XapianFu
         @xdb = xdb
       end
 
-      def [](doc_id)
+      # Return the document with the given id from the
+      # database. Raises a XapianFu::DocNotFoundError exception 
+      # if it doesn't exist.
+      def find(doc_id)
         xdoc = @xdb.ro.document(doc_id)
         XapianDoc.new(xdoc)
+      rescue RuntimeError => e
+        raise e.to_s =~ /^DocNotFoundError/ ? XapianFu::DocNotFound : e
+      end
+
+      # Return the document with the given id from the database or nil
+      # if it doesn't exist
+      def [](doc_id)
+        find(doc_id)
+      rescue XapianFu::DocNotFound
+        nil
+      end
+
+      # Delete the given document from the database and return the
+      # document id, or nil if it doesn't exist
+      def delete(doc)
+        if doc.respond_to?(:to_i)
+          @xdb.rw.delete_document(doc.to_i)
+          doc.to_i
+        end
+      rescue RuntimeError => e
+        raise e unless e.to_s =~ /^DocNotFoundError/
       end
     end
   end

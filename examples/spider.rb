@@ -4,7 +4,8 @@ require 'rubygems'
 require 'benchmark'
 require 'lib/xapian_fu'
 
-db = XapianFu::XapianDb.new(:dir => 'spider.db', :overwrite => true)
+db = XapianFu::XapianDb.new(:dir => 'spider.db', :store => :filename, 
+                            :overwrite => true)
 
 base_path = ARGV[0] || '.'
 
@@ -16,7 +17,8 @@ Dir.glob(File.join(base_path, "/**/*")) do |filename|
   puts "Indexing #{filename}"
   text = File.open(filename) { |f| f.read(10 * 1024) }
   bm = Benchmark.measure do
-    db << XapianFu::XapianDoc.new({:text => text, :filename => filename, :filesize => File.size(filename) })
+    db << XapianFu::XapianDoc.new({:text => text, :filename => filename, 
+                                    :filesize => File.size(filename) })
   end
   indexing_time += bm.total
   docs += 1
