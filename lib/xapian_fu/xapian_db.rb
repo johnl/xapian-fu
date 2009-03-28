@@ -1,6 +1,10 @@
 module XapianFu
   require 'xapian'
   require 'xapian_doc'
+  require 'thread'
+
+  class XapianFuError < StandardError ; end
+  class ConcurrencyError < XapianFuError ; end
 
   class XapianDb
     attr_reader :dir, :db_flag, :query_parser
@@ -11,6 +15,7 @@ module XapianFu
       @db_flag = Xapian::DB_CREATE_OR_OPEN if options[:create]
       @db_flag = Xapian::DB_CREATE_OR_OVERWRITE if options[:overwrite]
       rw.flush if options[:create]
+      @tx_mutex = Mutex.new
     end
 
     # Return the writable Xapian database
@@ -75,16 +80,19 @@ module XapianFu
     # exception re-raised.
     #
     def transaction
-      db.begin_transaction
-      yield
-      db.commit_transaction
+      @tx_mutex.synchronize do
+        rw.begin_transaction
+        yield
+        rw.commit_transaction
+      end
     rescue Exception => e
-      db.cancel_transaction
+      rw.cancel_transaction
       raise e
     end
 
     # Flush any changes to disk.
     def flush
+      raise ConcurrencyError if @tx_mutex.locked?
       rw.flush
       ro.reopen
     end

@@ -19,6 +19,7 @@ describe XapianDb do
   
   it "should make an on-disk database when given a :dir option" do
     xdb = XapianDb.new(:dir => tmp_dir, :create => true)
+    File.exists?(tmp_dir).should be_true
     xdb.should respond_to(:dir)
     xdb.dir.should == tmp_dir
     xdb.rw.should be_a_kind_of(Xapian::WritableDatabase)
@@ -30,6 +31,51 @@ describe XapianDb do
     xdb.size.should == 0
     xdb << "Once upon a time"
     xdb.size.should == 0
+    xdb.flush
+    xdb.size.should == 1
+  end
+
+  it "should support transactions" do
+    xdb = XapianDb.new(:dir => tmp_dir, :create => true)
+    xdb << "Once upon a time"
+    xdb.transaction do
+      xdb << "Once upon a time"
+      xdb.size.should == 1
+    end
+    xdb.flush
+    xdb.size.should == 2
+  end
+
+  it "should serialize attempts at concurrent transactions" do
+    xdb = XapianDb.new(:dir => tmp_dir, :create => true)
+    thread = Thread.new do
+      xdb.transaction do
+        sleep 0.1
+        xdb << "Once upon a time"
+        sleep 0.1
+        xdb << "Once upon a time"
+      end
+    end
+    xdb.transaction do
+      xdb << "Once upon a time"
+      sleep 0.1
+      xdb << "Once upon a time"
+    end
+    thread.join
+    xdb.flush
+    xdb.size.should == 4
+  end
+
+  it "should abort a transaction on an exception" do
+    xdb = XapianDb.new(:dir => tmp_dir, :create => true)
+    xdb << "Once upon a time"
+    begin
+      xdb.transaction do
+        xdb << "Once upon a time"
+        raise StandardError
+      end
+    rescue StandardError
+    end
     xdb.flush
     xdb.size.should == 1
   end
@@ -54,7 +100,6 @@ describe XapianDb do
     xdb.size.should == 1
     xdb << XapianDoc.new("once upon a time")
     xdb.size.should == 2
-    
   end
 
   it "should retrieve documents like an array and return a XapianDoc" do
