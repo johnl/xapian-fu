@@ -1,11 +1,16 @@
 require 'xapian'
 require 'lib/xapian_fu.rb'
 include XapianFu
+require 'fileutils'
 
+# Will be deleted
 tmp_dir = '/tmp/xapian_fu_test.db'
 
 describe XapianDb do
-
+  before do
+    FileUtils.rm_rf tmp_dir if File.exists?(tmp_dir)
+  end
+    
   it "should make an in-memory database by default" do
     xdb = XapianDb.new
     xdb.ro.should be_a_kind_of(Xapian::Database)
@@ -18,6 +23,15 @@ describe XapianDb do
     xdb.dir.should == tmp_dir
     xdb.rw.should be_a_kind_of(Xapian::WritableDatabase)
     xdb.ro.should be_a_kind_of(Xapian::Database)
+  end
+
+  it "should flush documents to the index when flush is called" do
+    xdb = XapianDb.new(:dir => tmp_dir, :create => true)
+    xdb.size.should == 0
+    xdb << "Once upon a time"
+    xdb.size.should == 0
+    xdb.flush
+    xdb.size.should == 1
   end
 
   it "should index a XapianDoc" do

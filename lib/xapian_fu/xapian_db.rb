@@ -10,6 +10,7 @@ module XapianFu
       @db_flag = Xapian::DB_OPEN
       @db_flag = Xapian::DB_CREATE_OR_OPEN if options[:create]
       @db_flag = Xapian::DB_CREATE_OR_OVERWRITE if options[:overwrite]
+      rw.flush if options[:create]
     end
 
     # Return the writable Xapian database
@@ -47,15 +48,9 @@ module XapianFu
       tg = Xapian::TermGenerator.new
       tg.database = rw
       tg.document = xdoc
-
       tg.index_text( doc.text )
-      xdoc_id = rw.add_document(xdoc)
-      if doc.is_a? XapianDoc
-        doc.id = xdoc_id
-        doc
-      else
-        xdoc
-      end
+      doc.id = rw.add_document(xdoc)
+      doc
     end
     alias_method "<<", :add_doc
 
@@ -91,6 +86,7 @@ module XapianFu
     # Flush any changes to disk.
     def flush
       rw.flush
+      ro.reopen
     end
 
     def query_parser
