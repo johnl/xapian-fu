@@ -23,6 +23,7 @@ module XapianFu
       @rw ||= setup_rw_db
     end
 
+    # Return the read-only Xapian database
     def ro
       @ro ||= setup_ro_db
     end
@@ -43,9 +44,10 @@ module XapianFu
     # 
     # If the document object reponds to the method :data, whatever it
     # returns is marshalled and stored in the  Xapian database.  Any
-    # arbitrary data up to Xmeg can be stored here.  This is often used
-    # to store a reference to another data storage system, such as the
-    # primary key of an SQL database table.
+    # arbitrary data up to Xmeg can be stored here.
+    #
+    # Currently, all fields are stored in the database. This will
+    # change to store only those fields requested to be stored.
     def add_doc(doc)
       doc = XapianDoc.new(doc) unless doc.is_a? XapianDoc
       doc.db = self
@@ -64,7 +66,7 @@ module XapianFu
     alias_method "<<", :add_doc
 
     # Conduct a search on the Xapian database, returning an array of 
-    # XapianResult objects
+    # XapianDoc objects for the matches
     def search(q, options = {})
       defaults = { :page => 1, :per_page => 10 }
       options = defaults.merge(options)
@@ -82,6 +84,11 @@ module XapianFu
     # 
     # If an exception is raised by the block, all changes are discarded and the
     # exception re-raised.
+    # 
+    # Xapian does not support multiple concurrent transactions on the
+    # same Xapian database. Any attempts at this will be serialized by
+    # XapianFu, which is not perfect but probably better than just
+    # kicking up an exception.
     #
     def transaction
       @tx_mutex.synchronize do
@@ -94,7 +101,8 @@ module XapianFu
       raise e
     end
 
-    # Flush any changes to disk.
+    # Flush any changes to disk and reopen the read-only database.
+    # Raises ConcurrencyError if a transaction is in process
     def flush
       raise ConcurrencyError if @tx_mutex.locked?
       rw.flush
