@@ -54,7 +54,11 @@ module XapianFu
       tg.database = rw
       tg.document = xdoc
       tg.index_text( doc.text )
-      doc.id = rw.add_document(xdoc)
+      if doc.id
+        rw.replace_document(doc.id, xdoc)
+      else
+        doc.id = rw.add_document(xdoc)
+      end
       doc
     end
     alias_method "<<", :add_doc

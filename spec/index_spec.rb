@@ -131,6 +131,26 @@ describe XapianDb do
     new_doc.id.should == 1
   end
 
+  it "should replace docs that already have an id when adding to the db" do
+    xdb = XapianDb.new
+    doc = xdb << XapianDoc.new("Once upon a time")
+    xdb.flush
+    xdb.size.should == 1
+    doc.id.should == 1
+    updated_doc = xdb << doc
+    xdb.flush
+    xdb.size.should == 1
+    updated_doc.id.should == doc.id
+  end
+
+  it "should add new docs with the given id" do
+    xdb = XapianDb.new
+    doc = xdb << XapianDoc.new(:id => 0xbeef, :title => "Once upon a time")
+    xdb.flush
+    xdb.documents[0xbeef].id.should == 0xbeef
+    doc.id.should == 0xbeef
+  end
+
   it "should tokenize strings" do
     xdb = XapianDb.new
     doc = xdb << XapianDoc.new("once upon a time")
