@@ -97,7 +97,7 @@ module XapianFu
     def add_stored_values_to_xapian_doc(xdoc)
       stored_values = fields.reject { |k,v| ! db.store_values.include? k }
       stored_values.each do |k,v|
-        xdoc.add_value(k.to_s.hash, v)
+        xdoc.add_value(k.to_s.hash, v.to_s)
       end
       xdoc
     end

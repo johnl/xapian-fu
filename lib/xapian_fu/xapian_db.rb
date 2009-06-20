@@ -80,6 +80,9 @@ module XapianFu
       per_page = options[:per_page].to_i rescue 10
       offset = page * per_page
       query = query_parser.parse_query(q, Xapian::QueryParser::FLAG_WILDCARD && Xapian::QueryParser::FLAG_LOVEHATE)
+      if options[:order]
+        enquiry.sort_by_value!(options[:order].to_s.hash)
+      end
       enquiry.query = query
       enquiry.mset(offset, per_page).matches.collect { |m| XapianDoc.new(m) }
     end
