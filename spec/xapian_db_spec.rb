@@ -249,6 +249,14 @@ describe XapianDb do
     doc = xdb.documents.find(1)
     doc.get_value(:created_at).should == time.to_i.to_s
   end
+  
+  it "should store values declared as to be collapsible" do
+    xdb = XapianDb.new(:collapsible => :group_id)
+    xdb << XapianDoc.new(:group_id => "666", :author => "Jim Jones")
+    xdb.flush
+    doc = xdb.documents.find(1)
+    doc.get_value(:group_id).should == "666"
+  end
 
   describe "search results sort order" do
     before(:each) do
@@ -273,6 +281,15 @@ describe XapianDb do
       results = @xdb.search("cow dog cat", :order => :number, :reverse => true)
       results.should == @expected_results.sort_by { |r| r.fields[:number] }.reverse
     end
+  end
+  
+  it "should collapse results by the value specified by the :collapse option" do
+    xdb = XapianDb.new(:collapsible => :group)
+    alpha1 = xdb << XapianDoc.new(:words => "cow dog cat", :group => "alpha")
+    alpha2 = xdb << XapianDoc.new(:words => "cow dog", :group => "alpha")
+    beta1  = xdb << XapianDoc.new(:words => "cow", :group => "beta")
+    results = xdb.search("cow dog cat", :collapse => :group)
+    results.should == [alpha1, beta1]
   end
   
 end

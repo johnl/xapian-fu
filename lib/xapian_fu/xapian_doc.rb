@@ -93,6 +93,10 @@ module XapianFu
       end
     end
     
+    def inspect
+      "<#{self.class.to_s} id=#{id}>"
+    end
+    
     private
     
     def add_stored_fields_to_xapian_doc(xdoc)

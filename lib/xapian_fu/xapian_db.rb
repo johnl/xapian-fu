@@ -19,6 +19,7 @@ module XapianFu
       @db_flag = Xapian::DB_CREATE_OR_OVERWRITE if options[:overwrite]
       @store_fields = Array.new(1, options[:store]).compact
       @store_values = Array.new(1, options[:sortable]).compact
+      @store_values += Array.new(1, options[:collapsible]).compact
       rw.flush if options[:create]
       @tx_mutex = Mutex.new
     end
@@ -82,6 +83,9 @@ module XapianFu
       query = query_parser.parse_query(q, Xapian::QueryParser::FLAG_WILDCARD && Xapian::QueryParser::FLAG_LOVEHATE)
       if options[:order]
         enquiry.sort_by_value!(options[:order].to_s.hash, options[:reverse])
+      end
+      if options[:collapse]
+        enquiry.collapse_key = options[:collapse].to_s.hash
       end
       enquiry.query = query
       enquiry.mset(offset, per_page).matches.collect { |m| XapianDoc.new(m) }
