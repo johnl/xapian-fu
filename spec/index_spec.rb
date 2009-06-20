@@ -240,4 +240,13 @@ describe XapianDb do
     doc.fields[:title].should == "Once upon a time"
     doc.fields[:author].should be_nil
   end
+  
+  it "should store values declared as to be sortable" do
+    xdb = XapianDb.new(:sortable => :created_at)
+    time = Time.now
+    xdb << XapianDoc.new(:created_at => time.to_i.to_s, :author => "Jim Jones")
+    xdb.flush
+    doc = xdb.documents.find(1)
+    doc.get_value(:created_at).should == time.to_i.to_s
+  end
 end

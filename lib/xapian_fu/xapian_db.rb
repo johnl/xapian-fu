@@ -1,23 +1,24 @@
 module XapianFu
+  class XapianFuError < StandardError ; end
+
   require 'xapian'
   require 'xapian_doc'
   require 'thread'
 
-  class XapianFuError < StandardError ; end
   class ConcurrencyError < XapianFuError ; end
   class DocNotFound < XapianFuError ; end
 
   class XapianDb
     attr_reader :dir, :db_flag, :query_parser
-    attr_reader :store_fields
+    attr_reader :store_fields, :store_values
 
     def initialize( options = { } )
       @dir = options[:dir]
       @db_flag = Xapian::DB_OPEN
       @db_flag = Xapian::DB_CREATE_OR_OPEN if options[:create]
       @db_flag = Xapian::DB_CREATE_OR_OVERWRITE if options[:overwrite]
-      @store_fields = []
-      @store_fields << options[:store]
+      @store_fields = Array.new(1, options[:store]).compact
+      @store_values = Array.new(1, options[:sortable]).compact
       rw.flush if options[:create]
       @tx_mutex = Mutex.new
     end
