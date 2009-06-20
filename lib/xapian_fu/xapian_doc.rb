@@ -85,6 +85,14 @@ module XapianFu
       fields.keys.collect { |key| fields[key].to_s }.join(' ')
     end
     
+    def ==(b)
+      if b.is_a?(XapianDoc)
+        id == b.id
+      else
+        super(b)
+      end
+    end
+    
     private
     
     def add_stored_fields_to_xapian_doc(xdoc)

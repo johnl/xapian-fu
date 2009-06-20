@@ -73,7 +73,7 @@ module XapianFu
     # Conduct a search on the Xapian database, returning an array of 
     # XapianDoc objects for the matches
     def search(q, options = {})
-      defaults = { :page => 1, :per_page => 10 }
+      defaults = { :page => 1, :per_page => 10, :reverse => false }
       options = defaults.merge(options)
       page = options[:page].to_i rescue 1
       page = page > 1 ? page - 1 : 0
@@ -81,7 +81,7 @@ module XapianFu
       offset = page * per_page
       query = query_parser.parse_query(q, Xapian::QueryParser::FLAG_WILDCARD && Xapian::QueryParser::FLAG_LOVEHATE)
       if options[:order]
-        enquiry.sort_by_value!(options[:order].to_s.hash)
+        enquiry.sort_by_value!(options[:order].to_s.hash, options[:reverse])
       end
       enquiry.query = query
       enquiry.mset(offset, per_page).matches.collect { |m| XapianDoc.new(m) }

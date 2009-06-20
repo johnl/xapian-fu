@@ -253,19 +253,25 @@ describe XapianDb do
   describe "search results sort order" do
     before(:each) do
       @xdb = XapianDb.new(:sortable => :number)
-      @doc1 = @xdb << XapianDoc.new(:words => "cow dog cat", :number => 1)
-      @doc2 = @xdb << XapianDoc.new(:words => "cow dog", :number => 2)
-      @doc3 = @xdb << XapianDoc.new(:words => "cow", :number => 3)
+      @expected_results = []
+      @expected_results << (@xdb << XapianDoc.new(:words => "cow dog cat", :number => 1))
+      @expected_results << (@xdb << XapianDoc.new(:words => "cow dog", :number => 3))
+      @expected_results << (@xdb << XapianDoc.new(:words => "cow", :number => 2))
     end
     
     it "should be by relevance by default" do
       results = @xdb.search("cow dog cat")
-      results.collect { |r| r.id }.should == [@doc1.id, @doc2.id, @doc3.id]
+      results.should == @expected_results
     end
     
-    it "should be by the value specified" do
+    it "should be by the value specified in descending numerical order" do
       results = @xdb.search("cow dog cat", :order => :number)
-      results.collect { |r| r.id }.should == [@doc3.id, @doc2.id, @doc1.id]
+      results.should == @expected_results.sort_by { |r| r.fields[:number] }
+    end
+    
+    it "should be reversed when the reverse option is set to true" do
+      results = @xdb.search("cow dog cat", :order => :number, :reverse => true)
+      results.should == @expected_results.sort_by { |r| r.fields[:number] }.reverse
     end
   end
   
