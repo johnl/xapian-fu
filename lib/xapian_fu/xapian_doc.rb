@@ -118,15 +118,19 @@ module XapianFu
       end
       xdoc
     end
+
+    private
+
+    def convert_to_value(o)
+      if o.respond_to?(:strftime)
+        o = o.utc if o.respond_to?(:utc)
+        o.strftime("%Y%m%d%H%M%S")          
+      else  
+        o.to_s
+      end
+    end
+    
   end
   
-  def convert_to_value(o)
-    if o.respond_to?(:strftime)
-      o = o.utc if o.respond_to?(:utc)
-      o.strftime("%Y%m%d%H%M%S")          
-    else
-      o.to_s
-    end
-  end
   
 end
