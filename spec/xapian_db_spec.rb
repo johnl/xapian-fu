@@ -242,12 +242,20 @@ describe XapianDb do
   end
   
   it "should store values declared as to be sortable" do
-    xdb = XapianDb.new(:sortable => :created_at)
-    time = Time.now
-    xdb << XapianDoc.new(:created_at => time.to_i.to_s, :author => "Jim Jones")
+    xdb = XapianDb.new(:sortable => :age)
+    xdb << XapianDoc.new(:age => "32", :author => "Jim Jones")
     xdb.flush
     doc = xdb.documents.find(1)
-    doc.get_value(:created_at).should == time.to_i.to_s
+    doc.get_value(:age).should == "32"
+  end
+
+  it "should store time objects in a string sortable order when storing as values" do
+    xdb = XapianDb.new(:sortable => :created_at)
+    time = Time.now
+    xdb << XapianDoc.new(:created_at => time, :title => "Teaching a Ferret to dance")
+    xdb.flush
+    doc = xdb.documents.find(1)
+    doc.get_value(:created_at).should == time.utc.strftime("%Y%m%d%H%M%S")
   end
   
   it "should store values declared as to be collapsible" do
@@ -262,14 +270,14 @@ describe XapianDb do
     before(:each) do
       @xdb = XapianDb.new(:sortable => :number)
       @expected_results = []
-      @expected_results << (@xdb << XapianDoc.new(:words => "cow dog cat", :number => 1))
-      @expected_results << (@xdb << XapianDoc.new(:words => "cow dog", :number => 3))
-      @expected_results << (@xdb << XapianDoc.new(:words => "cow", :number => 2))
+      @expected_results << (@xdb << XapianDoc.new(:words => "cow dog", :number => 3, :relevance => 2))
+      @expected_results << (@xdb << XapianDoc.new(:words => "cow dog cat", :number => 1, :relevance => 3))
+      @expected_results << (@xdb << XapianDoc.new(:words => "cow", :number => 2, :relevance => 1))
     end
     
-    it "should be by relevance by default" do
+    it "should be by search result weight by default" do
       results = @xdb.search("cow dog cat")
-      results.should == @expected_results
+      results.should == @expected_results.sort_by { |r| r.fields[:relevance] }.reverse
     end
     
     it "should be by the value specified in descending numerical order" do
@@ -281,6 +289,17 @@ describe XapianDb do
       results = @xdb.search("cow dog cat", :order => :number, :reverse => true)
       results.should == @expected_results.sort_by { |r| r.fields[:number] }.reverse
     end
+    
+    it "should be by the id when specified and in ascending numerical order by default" do
+      results = @xdb.search("cow dog cat", :order => :id)
+      results.should == @expected_results.sort_by { |r| r.id }
+    end
+    
+    it "should be by the id in descending numerical order when specified" do
+      results = @xdb.search("cow dog cat", :order => :id, :reverse => true)
+      results.should == @expected_results.sort_by { |r| r.id }.reverse      
+    end
+    
   end
   
   it "should collapse results by the value specified by the :collapse option" do

@@ -82,7 +82,10 @@ module XapianFu
 
     # Return text for indexing from the fields
     def text
-      fields.keys.collect { |key| fields[key].to_s }.join(' ')
+      fields_text = fields.keys.collect do |key|
+        convert_to_value(fields[key])
+      end
+      fields_text.join(' ')
     end
     
     def ==(b)
@@ -94,7 +97,9 @@ module XapianFu
     end
     
     def inspect
-      "<#{self.class.to_s} id=#{id}>"
+      s = ["<#{self.class.to_s} id=#{id}"]
+      s << "weight=%.5f" % weight if weight
+      s.join(' ') + ">"
     end
     
     private
@@ -109,9 +114,19 @@ module XapianFu
     def add_stored_values_to_xapian_doc(xdoc)
       stored_values = fields.reject { |k,v| ! db.store_values.include? k }
       stored_values.each do |k,v|
-        xdoc.add_value(k.to_s.hash, v.to_s)
+        xdoc.add_value(k.to_s.hash, convert_to_value(v))
       end
       xdoc
     end
   end
+  
+  def convert_to_value(o)
+    if o.respond_to?(:strftime)
+      o = o.utc if o.respond_to?(:utc)
+      o.strftime("%Y%m%d%H%M%S")          
+    else
+      o.to_s
+    end
+  end
+  
 end

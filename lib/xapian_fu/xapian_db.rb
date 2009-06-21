@@ -81,9 +81,7 @@ module XapianFu
       per_page = options[:per_page].to_i rescue 10
       offset = page * per_page
       query = query_parser.parse_query(q, Xapian::QueryParser::FLAG_WILDCARD && Xapian::QueryParser::FLAG_LOVEHATE)
-      if options[:order]
-        enquiry.sort_by_value!(options[:order].to_s.hash, options[:reverse])
-      end
+      setup_ordering(enquiry, options[:order], options[:reverse]) 
       if options[:collapse]
         enquiry.collapse_key = options[:collapse].to_s.hash
       end
@@ -152,7 +150,20 @@ module XapianFu
         @ro = rw
       end
     end
-
+    
+    def setup_ordering(enquiry, order = nil, reverse = true)
+      if order.to_s == "id"
+        # Sorting by a value that doesn't exist falls back to docid ordering
+        enquiry.sort_by_value!((1 << 32)-1, reverse)
+        enquiry.docid_order = reverse ? Xapian::Enquire::DESCENDING : Xapian::Enquire::ASCENDING
+      elsif order.is_a? String or order.is_a? Symbol
+        enquiry.sort_by_value!(order.to_s.hash, reverse)
+      else
+        enquiry.sort_by_relevance!
+      end
+      enquiry
+    end
+    
     #
     class XapianDocumentsAccessor
       def initialize(xdb)
