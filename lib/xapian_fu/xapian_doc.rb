@@ -40,7 +40,7 @@ module XapianFu
           @data = xdoc_data
         end
       # Handle initialisation from a hash-like object
-      elsif doc.respond_to?("[]") and doc.respond_to?(:has_key?)
+      elsif doc.respond_to?(:has_key?) and doc.respond_to?("[]")
         @fields = doc
         @id = doc[:id] if doc.has_key?(:id)
       # Handle initialisation from anything else that can be coerced
@@ -105,6 +105,7 @@ module XapianFu
     private
     
     def add_stored_fields_to_xapian_doc(xdoc)
+      # FIXME: performance!
       stored_fields = fields.reject { |k,v| ! db.store_fields.include? k }
       stored_fields[:__data] = data if data
       xdoc.data = Marshal.dump(stored_fields) unless stored_fields.empty?

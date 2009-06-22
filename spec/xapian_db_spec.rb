@@ -224,6 +224,15 @@ describe XapianDb do
     results = xdb.search(content, :page => 100, :per_page => 12)
     results.size.should == 0
   end
+  
+  it "should limit results when the :limit option is given" do
+    xdb = XapianDb.new
+    content = "word"
+    30.times { xdb << XapianDoc.new(content) }
+    xdb.size.should == 30
+    results = xdb.search(content, :limit => 16)
+    results.size.should == 16
+  end
 
   it "should store no fields by default" do
     xdb = XapianDb.new

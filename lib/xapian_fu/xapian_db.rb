@@ -74,11 +74,12 @@ module XapianFu
     # Conduct a search on the Xapian database, returning an array of 
     # XapianDoc objects for the matches
     def search(q, options = {})
-      defaults = { :page => 1, :per_page => 10, :reverse => false }
+      defaults = { :page => 1, :reverse => false }
       options = defaults.merge(options)
       page = options[:page].to_i rescue 1
       page = page > 1 ? page - 1 : 0
-      per_page = options[:per_page].to_i rescue 10
+      per_page = options[:per_page] || options[:limit] || 10
+      per_page = per_page.to_i rescue 10
       offset = page * per_page
       query = query_parser.parse_query(q, Xapian::QueryParser::FLAG_WILDCARD && Xapian::QueryParser::FLAG_LOVEHATE)
       setup_ordering(enquiry, options[:order], options[:reverse]) 
