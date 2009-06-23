@@ -200,9 +200,20 @@ module XapianFu
         raise e unless e.to_s =~ /^DocNotFoundError/
       end
       
-      # Return the document with the highest document id or nil if it doesn't exist
-      def max
-        find(@xdb.ro.lastdocid)
+      # Return the document with the highest value in the specified field or nil if it doesn't exist
+      def max(key = :id)
+        if key == :id
+          # for :id we can use lastdocid
+          find(@xdb.ro.lastdocid) rescue nil
+        else
+          # for other values, we do a search ordered by that key in descening order
+          query = Xapian::Query.new(Xapian::Query::OP_VALUE_GE, key.to_s.hash, "0")
+          e = Xapian::Enquire.new(@xdb.ro)
+          e.query = query
+          e.sort_by_value!(key.to_s.hash)
+          r = e.mset(0, 1).matches.first
+          find(r.docid) rescue nil
+        end
       end
     end
   end

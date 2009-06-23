@@ -176,6 +176,15 @@ describe XapianDb do
     xdb.documents.max.id.should == 20
   end
 
+  it "should return the doc with the highest specified value with the max method" do
+    xdb = XapianDb.new(:sortable => :number)
+    xdb << { :id => 8, :number => "200" }
+    xdb << { :id => 9, :number => "300" }
+    xdb << { :id => 15, :number => "100"  }
+    xdb.flush
+    xdb.documents.max(:number).id.should == 9
+  end
+
   it "should handle being asked to delete docs that don't exist in the db" do
     xdb = XapianDb.new
     doc = xdb << XapianDoc.new("Once upon a time")
@@ -274,6 +283,14 @@ describe XapianDb do
     xdb.flush
     doc = xdb.documents.find(1)
     doc.get_value(:created_at).should == time.utc.strftime("%Y%m%d%H%M%S")
+  end
+  
+  it "should store integers in a string sortable order when storing as values" do
+    xdb = XapianDb.new(:sortable => :number)
+    xdb << XapianDoc.new(:number => 57, :title => "Teaching a Ferret to dance")
+    xdb.flush
+    doc = xdb.documents.find(1)
+    doc.get_value(:number).should == "%.10d" % 57
   end
   
   it "should store values declared as to be collapsible" do
