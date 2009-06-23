@@ -166,6 +166,15 @@ describe XapianDb do
     xdb.flush
     xdb.size.should == 0
   end
+  
+  it "should return the doc with the highest id with the max method" do
+    xdb = XapianDb.new
+    xdb << { :id => 20 }
+    xdb << { :id => 9 }
+    xdb << { :id => 15 }
+    xdb.flush
+    xdb.documents.max.id.should == 20
+  end
 
   it "should handle being asked to delete docs that don't exist in the db" do
     xdb = XapianDb.new

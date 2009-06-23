@@ -199,6 +199,11 @@ module XapianFu
       rescue RuntimeError => e
         raise e unless e.to_s =~ /^DocNotFoundError/
       end
+      
+      # Return the document with the highest document id or nil if it doesn't exist
+      def max
+        find(@xdb.ro.lastdocid)
+      end
     end
   end
 
