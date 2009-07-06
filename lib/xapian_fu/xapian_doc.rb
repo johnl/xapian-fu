@@ -52,6 +52,7 @@ module XapianFu
       end
       @weight = options[:weight] if options[:weight]
       @data = options[:data] if options[:data]
+      @db = options[:xapian_db] if options[:xapian_db]
     end
 
     # Retrieve the given Xapianvalue from the XapianDb.  <tt>vkey</tt>

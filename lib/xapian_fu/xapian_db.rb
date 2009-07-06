@@ -176,7 +176,7 @@ module XapianFu
       # if it doesn't exist.
       def find(doc_id)
         xdoc = @xdb.ro.document(doc_id)
-        XapianDoc.new(xdoc)
+        XapianDoc.new(xdoc, :xapian_db => @xdb)
       rescue RuntimeError => e
         raise e.to_s =~ /^DocNotFoundError/ ? XapianFu::DocNotFound : e
       end

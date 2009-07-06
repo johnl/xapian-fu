@@ -128,6 +128,12 @@ describe XapianDb do
     xdb << "once upon a time"
     xdb.documents[1].id.should == 1
   end
+  
+  it "should set the db field for the retrieved XapianDoc" do
+    xdb = XapianDb.new
+    xdb << "once upon a time"
+    xdb.documents[1].db.should == xdb
+  end
 
   it "should store data in the database" do
     xdb = XapianDb.new
