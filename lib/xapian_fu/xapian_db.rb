@@ -149,15 +149,19 @@ module XapianFu
     # XapianFu, which is not perfect but probably better than just
     # kicking up an exception.
     #
-    def transaction
+    def transaction(flush_on_commit = true)
       @tx_mutex.synchronize do
-        rw.begin_transaction
-        yield
+        begin
+          rw.begin_transaction(flush_on_commit)
+          yield
+        rescue Exception => e
+          rw.cancel_transaction
+          ro.reopen
+          raise e
+        end
         rw.commit_transaction
+        ro.reopen
       end
-    rescue Exception => e
-      rw.cancel_transaction
-      raise e
     end
 
     # Flush any changes to disk and reopen the read-only database.
