@@ -213,6 +213,18 @@ describe XapianDb do
     doc.terms.last.should be_a_kind_of Xapian::Term
     doc.terms.last.term.should == "upon"
   end
+  
+  it "should store positions by default when tokenizing" do
+    xdb = XapianDb.new
+    doc = xdb << XapianDoc.new("once upon a time")
+    xdb.ro.positionlist(doc.id, "time").first.should == 4
+  end
+
+  it "should not store positions when tokenizing when :index_positions is set to false" do
+    xdb = XapianDb.new(:index_positions => false)
+    doc = xdb << XapianDoc.new("once upon a time")
+    xdb.ro.positionlist(doc.id, "once").first.should == nil
+  end
 
   it "should tokenize a hash" do
     xdb = XapianDb.new

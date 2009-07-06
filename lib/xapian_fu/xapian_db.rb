@@ -58,9 +58,12 @@ module XapianFu
   class XapianDb
     attr_reader :dir, :db_flag, :query_parser
     attr_reader :store_fields, :store_values
+    attr_reader :index_positions
 
     def initialize( options = { } )
+      options = { :index_positions => true }.merge(options)
       @dir = options[:dir]
+      @index_positions = options[:index_positions]
       @db_flag = Xapian::DB_OPEN
       @db_flag = Xapian::DB_CREATE_OR_OPEN if options[:create]
       @db_flag = Xapian::DB_CREATE_OR_OVERWRITE if options[:overwrite]
@@ -108,7 +111,11 @@ module XapianFu
       tg = Xapian::TermGenerator.new
       tg.database = rw
       tg.document = xdoc
-      tg.index_text( doc.text )
+      if index_positions
+        tg.index_text(doc.text)
+      else
+        tg.index_text_without_positions(doc.text)
+      end
       if doc.id
         rw.replace_document(doc.id, xdoc)
       else
@@ -171,7 +178,7 @@ module XapianFu
       rw.flush
       ro.reopen
     end
-
+    
     # return the current Xapian::QueryParser object, or create a new one
     def query_parser
       unless @query_parser
