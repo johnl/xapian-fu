@@ -7,6 +7,28 @@ module XapianFu
 
   class ConcurrencyError < XapianFuError ; end
   class DocNotFound < XapianFuError ; end
+  
+  class ResultSet < Array
+    
+    attr_reader :mset, :current_page, :per_page
+    attr_reader :total_pages
+    
+    def initialize(options = { })
+      @mset = options[:mset]
+      @current_page = options[:current_page]
+      @per_page = options[:per_page]
+      concat mset.matches.collect { |m| XapianDoc.new(m) }      
+    end
+    
+    def total_entries
+      mset.matches_estimated
+    end
+    
+    def total_pages
+      (total_entries / per_page.to_f).round
+    end
+    
+  end
 
   class XapianDb
     attr_reader :dir, :db_flag, :query_parser
@@ -87,7 +109,8 @@ module XapianFu
         enquiry.collapse_key = options[:collapse].to_s.hash
       end
       enquiry.query = query
-      enquiry.mset(offset, per_page).matches.collect { |m| XapianDoc.new(m) }
+      ResultSet.new(:mset => enquiry.mset(offset, per_page), :current_page => page + 1, 
+                    :per_page => per_page)
     end
 
     # Run the given block in a XapianDB transaction.  Any changes to the 
