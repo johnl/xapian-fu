@@ -28,6 +28,20 @@ module XapianFu
       (total_entries / per_page.to_f).round
     end
     
+    def previous_page
+      p = current_page - 1
+      p == 0 ? nil : p
+    end
+    
+    def next_page
+      p = current_page + 1
+      p > total_pages ? nil : p
+    end
+    
+    def offset
+      (current_page - 1) * per_page
+    end
+    
   end
 
   class XapianDb

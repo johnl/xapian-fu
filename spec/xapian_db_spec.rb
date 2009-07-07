@@ -263,12 +263,20 @@ describe XapianDb do
     content = "word"
     30.times { xdb << XapianDoc.new(content) }
     xdb.size.should == 30
-    results = xdb.search(content, :limit => 16)
+    results = xdb.search(content, :page => 1, :per_page => 16)
     results.should be_a_kind_of XapianFu::ResultSet
     results.per_page.should == 16
     results.current_page.should == 1
     results.total_entries.should == 30
     results.total_pages.should == 2
+    results.previous_page.should == nil
+    results.next_page.should == 2
+    results.offset.should == 0
+    results = xdb.search(content, :page => 2, :per_page => 16)
+    results.current_page.should == 2
+    results.previous_page.should == 1
+    results.next_page.should == nil
+    results.offset.should == 16
   end    
 
   it "should store no fields by default" do
