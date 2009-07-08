@@ -17,12 +17,16 @@ module XapianFu
     attr_reader :current_page, :per_page
     # The total number of pages of results available for this search
     attr_reader :total_pages
+    # If any spelling corrections were detected, the full collected query is provided
+    # by :corrected_query, otherwise this is empty.
+    attr_reader :corrected_query
     
     # nodoc
     def initialize(options = { })
       @mset = options[:mset]
       @current_page = options[:current_page]
       @per_page = options[:per_page]
+      @corrected_query = options[:corrected_query]
       concat mset.matches.collect { |m| XapianDoc.new(m) }      
     end
     
@@ -128,21 +132,41 @@ module XapianFu
     # Conduct a search on the Xapian database, returning an array of 
     # XapianDoc objects for the matches
     def search(q, options = {})
-      defaults = { :page => 1, :reverse => false }
+      defaults = { :page => 1, :reverse => false, 
+        :boolean => true, :boolean_anycase => true, :wildcards => true, 
+        :lovehate => true, :spelling => true, :pure_not => false }
       options = defaults.merge(options)
       page = options[:page].to_i rescue 1
       page = page > 1 ? page - 1 : 0
       per_page = options[:per_page] || options[:limit] || 10
       per_page = per_page.to_i rescue 10
       offset = page * per_page
-      query = query_parser.parse_query(q, Xapian::QueryParser::FLAG_WILDCARD && Xapian::QueryParser::FLAG_LOVEHATE)
+      qflags = 0
+      qflags |= Xapian::QueryParser::FLAG_BOOLEAN if options[:boolean]
+      qflags |= Xapian::QueryParser::FLAG_BOOLEAN_ANY_CASE if options[:boolean_anycase]
+      qflags |= Xapian::QueryParser::FLAG_WILDCARD if options[:wildcards]
+      qflags |= Xapian::QueryParser::FLAG_LOVEHATE if options[:lovehate]
+      qflags |= Xapian::QueryParser::FLAG_SPELLING_CORRECTION if options[:spelling]
+      qflags |= Xapian::QueryParser::FLAG_PURE_NOT if options[:pure_not]
+      default_op = case options[:default_op]
+                   when :and_maybe
+                     Xapian::Query::OP_AND_MAYBE
+                   when :or
+                     Xapian::Query::OP_OR
+                   when :phrase
+                     Xapian::Query::OP_PHRASE
+                   else
+                     Xapian::Query::OP_AND
+                   end
+      query_parser.default_op = default_op
+      query = query_parser.parse_query(q, qflags)
       setup_ordering(enquiry, options[:order], options[:reverse]) 
       if options[:collapse]
         enquiry.collapse_key = options[:collapse].to_s.hash
       end
       enquiry.query = query
       ResultSet.new(:mset => enquiry.mset(offset, per_page), :current_page => page + 1, 
-                    :per_page => per_page)
+                    :per_page => per_page, :corrected_query => query_parser.get_corrected_query_string)
     end
 
     # Run the given block in a XapianDB transaction.  Any changes to the 

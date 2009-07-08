@@ -36,7 +36,7 @@ describe XapianDb do
     xdb.flush
     xdb.size.should == 1
   end
-  
+
   describe "transaction" do
     it "should commit writes when the block completed successfully" do
       xdb = XapianDb.new(:dir => tmp_dir, :create => true)
@@ -207,7 +207,7 @@ describe XapianDb do
       doc.terms.last.term.should == "upon"
     end
   end
-  
+
   describe "search" do
     it "should return a list of XapianDocs with the weight and match set" do
       xdb = XapianDb.new
@@ -226,11 +226,73 @@ describe XapianDb do
       alpha1 = xdb << XapianDoc.new(:words => "cow dog cat", :group => "alpha")
       alpha2 = xdb << XapianDoc.new(:words => "cow dog", :group => "alpha")
       beta1  = xdb << XapianDoc.new(:words => "cow", :group => "beta")
-      results = xdb.search("cow dog cat", :collapse => :group)
+      results = xdb.search("cow dog cat", :collapse => :group, :default_op => :or)
       results.should == [alpha1, beta1]
     end
 
-    it "should do a boolean search by default"
+    it "should do a case-insensitive boolean AND search by default" do
+      xdb = XapianDb.new
+      doc1 = xdb << "cow dog cat"
+      doc2 = xdb << "cow dog"
+      xdb.search("cow dog cat").should == [doc1]
+    end
+
+    it "should do a case-sensitive boolean search when the :boolean_anycase option is set to false" do
+      pending
+      xdb = XapianDb.new
+      doc1 = xdb << "cow dog"
+      doc2 = xdb << "COW dog"
+      xdb.search("cow", :boolean_anycase => false).should == [doc1]
+      xdb.search("COW", :boolean_anycase => false).should == [doc2]
+    end
+
+    it "should allow LOVEHATE style queries by default" do
+      xdb = XapianDb.new
+      doc1 = xdb << "cow dog cat moose"
+      doc2 = xdb << "cow dog"
+      doc3 = xdb << "cow dog moose"
+      doc4 = xdb << "cow moose"
+      xdb.search("cow +dog -cat", :default_op => :or).should == [doc2, doc3]
+    end
+
+    it "should do a boolean OR search when :default_op option is set to :or" do
+      xdb = XapianDb.new
+      doc1 = xdb << "cow dog cat"
+      doc2 = xdb << "cow dog"
+      xdb.search("cow dog cat", :default_op => :or).should == [doc1, doc2]
+    end
+
+    it "should allow a wildcard search by default" do
+      xdb = XapianDb.new
+      doc1 = xdb << "fox"
+      doc2 = xdb << "follow"
+      doc3 = xdb << "fantastic"
+      xdb.search("fo*").should == [doc1, doc2]
+    end
+
+    it "should ignore wildcard searches when the :wildcards option is false" do
+      xdb = XapianDb.new
+      doc1 = xdb << "fox"
+      doc2 = xdb << "follow"
+      doc3 = xdb << "fo"
+      xdb.search("fo*", :wildcards => false).should == [doc3]
+    end
+
+    it "should provide a corrected spelling string by default" do
+      pending
+      xdb = XapianDb.new(:dir => tmp_dir + 'corrected_spelling', :create => true)
+      xdb.rw.add_spelling("house mouse louse")
+      xdb << "there is a mouse in this house"
+      xdb.flush
+      results = xdb.search("moose")
+      results.corrected_query.should == "mouse"
+    end
+
+    it "should do phrase matching by default when then :default_op option is :phrase"
+
+    it "should do AND_MAYBE matching by default when the :default_op option is :and_maybe"
+
+    it "should do PURE_NOT matching by default when the :default_op option is :pure_not"
 
     it "should page results when given the :page and :per_page options" do
       xdb = XapianDb.new
@@ -306,7 +368,7 @@ describe XapianDb do
       xdb.size.should == 1
       updated_doc.id.should == doc.id
     end
-    
+
     it "should store no fields by default" do
       xdb = XapianDb.new
       xdb << XapianDoc.new(:title => "Once upon a time")
@@ -355,16 +417,16 @@ describe XapianDb do
       doc = xdb.documents.find(1)
       doc.get_value(:group_id).should == "666"
     end
-      
+
     it "should store data in the database" do
       xdb = XapianDb.new
       xdb << XapianDoc.new({ :text => "once upon a time" }, :data => { :thing => 0xdeadbeef })
       xdb.size.should == 1
       doc = xdb.documents[1]
       doc.data.should == { :thing => 0xdeadbeef }
-    end 
+    end
   end
-  
+
   describe "search results sort order" do
     before(:each) do
       @xdb = XapianDb.new(:sortable => :number)
@@ -375,27 +437,27 @@ describe XapianDb do
     end
 
     it "should be by search result weight by default" do
-      results = @xdb.search("cow dog cat")
+      results = @xdb.search("cow dog cat", :default_op => :or)
       results.should == @expected_results.sort_by { |r| r.fields[:relevance] }.reverse
     end
 
     it "should be by the value specified in descending numerical order" do
-      results = @xdb.search("cow dog cat", :order => :number)
+      results = @xdb.search("cow dog cat", :default_op => :or, :order => :number)
       results.should == @expected_results.sort_by { |r| r.fields[:number] }
     end
 
     it "should be reversed when the reverse option is set to true" do
-      results = @xdb.search("cow dog cat", :order => :number, :reverse => true)
+      results = @xdb.search("cow dog cat", :default_op => :or, :order => :number, :reverse => true)
       results.should == @expected_results.sort_by { |r| r.fields[:number] }.reverse
     end
 
     it "should be by the id when specified and in ascending numerical order by default" do
-      results = @xdb.search("cow dog cat", :order => :id)
+      results = @xdb.search("cow dog cat", :default_op => :or, :order => :id)
       results.should == @expected_results.sort_by { |r| r.id }
     end
 
     it "should be by the id in descending numerical order when specified" do
-      results = @xdb.search("cow dog cat", :order => :id, :reverse => true)
+      results = @xdb.search("cow dog cat", :default_op => :or, :order => :id, :reverse => true)
       results.should == @expected_results.sort_by { |r| r.id }.reverse
     end
 
