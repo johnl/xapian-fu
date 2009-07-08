@@ -7,12 +7,18 @@ module XapianFu
 
   class ConcurrencyError < XapianFuError ; end
   class DocNotFound < XapianFuError ; end
-  
+
+  # A XapianFu::ResultSet holds the XapianDoc objects returned from a search.
+  # It acts just like an array but is decorated with useful attributes.
   class ResultSet < Array
     
-    attr_reader :mset, :current_page, :per_page
+    # The Xapian match set for this search 
+    attr_reader :mset
+    attr_reader :current_page, :per_page
+    # The total number of pages of results available for this search
     attr_reader :total_pages
     
+    # nodoc
     def initialize(options = { })
       @mset = options[:mset]
       @current_page = options[:current_page]
@@ -20,24 +26,29 @@ module XapianFu
       concat mset.matches.collect { |m| XapianDoc.new(m) }      
     end
     
+    # The estimated total number of matches this search could return
     def total_entries
       mset.matches_estimated
     end
     
+    # The estimated total number of pages of results this search could return
     def total_pages
       (total_entries / per_page.to_f).round
     end
     
+    # The previous page number, or nil if there are no previous pages available
     def previous_page
       p = current_page - 1
       p == 0 ? nil : p
     end
     
+    # The next page number, or nil if there are no more more pages available
     def next_page
       p = current_page + 1
       p > total_pages ? nil : p
     end
     
+    # The offset within the total results of the first result in this page
     def offset
       (current_page - 1) * per_page
     end
@@ -157,6 +168,7 @@ module XapianFu
       ro.reopen
     end
 
+    # return the current Xapian::QueryParser object, or create a new one
     def query_parser
       unless @query_parser
         @query_parser = Xapian::QueryParser.new
@@ -165,12 +177,14 @@ module XapianFu
       @query_parser
     end 
 
+    # return the current Xapian::Enquire object, or create a new one
     def enquiry
       @enquiry ||= Xapian::Enquire.new(ro)
     end
 
     private
 
+    # Setup the writable database
     def setup_rw_db
       if dir
         @rw = Xapian::WritableDatabase.new(dir, db_flag)
@@ -180,6 +194,7 @@ module XapianFu
       end
     end
 
+    # Setup the read-only database
     def setup_ro_db
       if dir
         @ro = Xapian::Database.new(dir)
@@ -189,6 +204,7 @@ module XapianFu
       end
     end
     
+    # Setup ordering for the given Xapian::Enquire objects
     def setup_ordering(enquiry, order = nil, reverse = true)
       if order.to_s == "id"
         # Sorting by a value that doesn't exist falls back to docid ordering
@@ -202,7 +218,7 @@ module XapianFu
       enquiry
     end
     
-    #
+    # A XapianDocumentsAccessor is used to provide the XapianDb#documents interface
     class XapianDocumentsAccessor
       def initialize(xdb)
         @xdb = xdb
