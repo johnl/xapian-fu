@@ -2,6 +2,7 @@ require 'xapian'
 require 'lib/xapian_fu.rb'
 include XapianFu
 require 'fileutils'
+require 'date'
 
 # Will be deleted
 tmp_dir = '/tmp/xapian_fu_test.db'
@@ -400,6 +401,15 @@ describe XapianDb do
       xdb.flush
       doc = xdb.documents.find(1)
       doc.get_value(:created_at).should == time.utc.strftime("%Y%m%d%H%M%S")
+    end
+    
+    it "should store date objects in a string sortable order when storing as values" do
+      xdb = XapianDb.new(:sortable => :created_on)
+      date = Date.today
+      xdb << XapianDoc.new(:created_on => date, :title => "Digging up sphinxes")
+      xdb.flush
+      doc = xdb.documents.find(1)
+      doc.get_value(:created_on).should == date.strftime("%Y%m%d")
     end
 
     it "should store integers in a string sortable order when storing as values" do

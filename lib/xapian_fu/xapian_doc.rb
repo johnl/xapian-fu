@@ -125,9 +125,16 @@ module XapianFu
 
     def convert_to_value(o)
       if o.respond_to?(:strftime)
-        o = o.utc if o.respond_to?(:utc)
-        o.strftime("%Y%m%d%H%M%S")
+        if o.respond_to?(:hour)
+          # A Time-like object
+          o = o.utc if o.respond_to?(:utc)
+          o.strftime("%Y%m%d%H%M%S")
+        else
+          # A Date-like object
+          o.strftime("%Y%m%d")
+        end
       elsif o.is_a? Integer
+        # Add 10 leading zeros
         o = "%.10d" % o
       else  
         o.to_s
