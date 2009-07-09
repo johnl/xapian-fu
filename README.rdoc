@@ -5,9 +5,9 @@ XapianFu is a Ruby library for working with
 Xapian Ruby bindings but provides an interface more in-line with "The
 Ruby Way"(tm).
 
-== Example
+== Basic usage example
 
-Create a database, add 3 documents to it and then search and retrieve 
+Create a database, add 3 documents to it and then search and retrieve
 them.
 
   db = XapianDb.new(:dir => 'example.db', :create => true,
@@ -19,17 +19,87 @@ them.
     puts match.fields[:title]
   end
 
+== Ordering of results
+
+Create an in-memory database, add 3 documents to it and then search and retrieve
+them in year order.
+
+  db = XapianDb.new(:store => [:title, :year], :sortable => :year)
+  db << { :title => 'Brokeback Mountain', :year => 2005 }
+  db << { :title => 'Cold Mountain', :year => 2004 }
+  db << { :title => 'Yes Man', :year => 2008 }
+  db.search("mountain", :order => :year)
+
+== will_paginate support
+
+  @results = db.search("mountain", :page => 1, :per_page => 5)
+  will_paginate @results
+
+== Transactions support
+
+  db = XapianDb.new(:store => [:title, :year], :sortable => :year)
+  db.transaction do
+    db << { :title => 'Brokeback Mountain', :year => 2005 }
+    db << { :title => 'Cold Mountain', :year => 2004 }
+    db << { :title => 'Yes Man', :year => 2008 }
+  end
+  db.search("mountain")
+
+== Simple max value queries
+
+  db.documents.max(:year)
+
+== Search examples
+
+Boolean AND (default)
+
+  db.search("ruby AND rails")
+  db.search("ruby rails")
+
+Boolean OR
+
+  db.search("rails OR sinatra")
+  db.search("rails sinatra", :default_op => :or)
+
+Exclude certain terms
+
+  db.search("ruby -rails")
+
+Wildcards
+
+  db.search("xap*")
+
+Phrase searches
+
+  db.search("'someone dropped a steamer in the gene pool'")
+
+And any combinations of the above:
+
+  db.search("(ruby OR sinatra) -rails xap*")
+
 == ActiveRecord Example
 
-You could use it with something like ActiveRecord to index database 
-records:
+XapianFu always stores the :id field, so you can easily use it with
+something like ActiveRecord to index database records:
 
-  db = XapianDb.new(:dir => 'posts.db', :create => true,
-                    :store => :id)
-  Post.all.each { db << p.attributes }
-  db.search("custard").collect do |doc|
-    Post.find(doc.id)
-  end
+  db = XapianDb.new(:dir => 'posts.db', :create => true)
+  Post.all.each { |p| db << p.attributes }
+  docs = db.search("custard")
+  docs.each_with_index { |doc,i| docs[i] = Post.find(doc.id) }
+
+Combine it with the max value search to do batch delta updates by primary key:
+
+  db = XapianDb.new(:dir => 'posts.db')
+  last_id = db.documents.max(:id)
+  new_posts = Post.find(:all, :conditions => ['id > ?', last_id])
+  new_posts.each { |p| db << p.attributes }
+
+Or by :updated_at field if you prefer:
+
+  db = XapianDb.new(:dir => 'posts.db', :sortable => :updated_at)
+  last_updated_at = db.documents.max(:updated_at)
+  new_posts = Post.find(:all, :conditions => ['updated_at >= ?', DateTime.parse(last_updated_at])
+  new_posts.each { |p| db << p.attributes }
 
 = More Info
 
