@@ -98,34 +98,8 @@ module XapianFu
       @documents_accessor ||= XapianDocumentsAccessor.new(self)
     end
 
-    # Add a document to the index. A document can be just a hash, the
-    # keys representing field names and their values the data to be
-    # indexed.  Or it can be a XapianDoc, or any object with a to_s method.
-    # 
-    # If the document object reponds to the method :data, whatever it
-    # returns is marshalled and stored in the  Xapian database.  Any
-    # arbitrary data up to Xmeg can be stored here.
-    #
-    # Currently, all fields are stored in the database. This will
-    # change to store only those fields requested to be stored.
     def add_doc(doc)
-      doc = XapianDoc.new(doc) unless doc.is_a? XapianDoc
-      doc.db = self
-      xdoc = doc.to_xapian_document
-      tg = Xapian::TermGenerator.new
-      tg.database = rw
-      tg.document = xdoc
-      if index_positions
-        tg.index_text(doc.text)
-      else
-        tg.index_text_without_positions(doc.text)
-      end
-      if doc.id
-        rw.replace_document(doc.id, xdoc)
-      else
-        doc.id = rw.add_document(xdoc)
-      end
-      doc
+      documents.add(doc)
     end
     alias_method "<<", :add_doc
 
@@ -255,9 +229,30 @@ module XapianFu
     
     # A XapianDocumentsAccessor is used to provide the XapianDb#documents interface
     class XapianDocumentsAccessor
-      def initialize(xdb)
+      def initialize(xdb) #:nodoc:
         @xdb = xdb
       end
+
+      # Add a document to the index. A document can be just a hash, the
+      # keys representing field names and their values the data to be
+      # indexed.  Or it can be a XapianDoc, or any object with a to_s method.
+      #
+      # If the document has an :id field, it is used as the primary key
+      # in the Xapian database.
+      #
+      # If the document object reponds to the method :data, whatever it
+      # returns is marshalled and stored in the  Xapian database.  Any
+      # arbitrary data up to Xmeg can be stored here.
+      #
+      # Currently, all fields are stored in the database. This will
+      # change to store only those fields requested to be stored.
+      def add(doc)
+        doc = XapianDoc.new(doc) unless doc.is_a? XapianDoc
+        doc.db = @xdb
+        doc.save
+        doc
+      end
+      alias_method "<<", :add
 
       # Return the document with the given id from the
       # database. Raises a XapianFu::DocNotFoundError exception 

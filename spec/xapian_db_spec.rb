@@ -38,6 +38,10 @@ describe XapianDb do
     xdb.size.should == 1
   end
 
+  it "should return a nice string when inspect is called" do
+    XapianDb.new.inspect.should =~ /XapianDb/
+  end
+  
   describe "transaction" do
     it "should commit writes when the block completed successfully" do
       xdb = XapianDb.new(:dir => tmp_dir, :create => true)

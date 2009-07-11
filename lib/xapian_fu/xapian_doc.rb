@@ -78,7 +78,7 @@ module XapianFu
       xdoc = Xapian::Document.new
       add_stored_fields_to_xapian_doc(xdoc)
       add_stored_values_to_xapian_doc(xdoc)
-      xdoc
+      generate_terms(xdoc)
     end
 
     # Return text for indexing from the fields
@@ -100,12 +100,28 @@ module XapianFu
     def inspect
       s = ["<#{self.class.to_s} id=#{id}"]
       s << "weight=%.5f" % weight if weight
+      s << "db=#{db.nil? ? 'nil' : db}"
       s.join(' ') + ">"
     end
-    
+
+    # Add this document to the Xapian Database, or replace it if it already exists
+    def save
+      id ? update : create
+    end
+
+    # Add this document to the Xapian Database
+    def create
+      self.id = db.rw.add_document(to_xapian_document)
+    end
+
+    # Update this document in the Xapian Database
+    def update
+      db.rw.replace_document(id, to_xapian_document)
+    end
+
     private
     
-    def add_stored_fields_to_xapian_doc(xdoc)
+    def add_stored_fields_to_xapian_doc(xdoc = Xapian::Document.new)
       # FIXME: performance!
       stored_fields = fields.reject { |k,v| ! db.store_fields.include? k }
       stored_fields[:__data] = data if data
@@ -113,7 +129,7 @@ module XapianFu
       xdoc
     end
     
-    def add_stored_values_to_xapian_doc(xdoc)
+    def add_stored_values_to_xapian_doc(xdoc = Xapian::Document.new)
       stored_values = fields.reject { |k,v| ! db.store_values.include? k }
       stored_values.each do |k,v|
         xdoc.add_value(k.to_s.hash, convert_to_value(v))
@@ -121,8 +137,21 @@ module XapianFu
       xdoc
     end
 
-    private
+    # Run the Xapian term generator against this documents text
+    def generate_terms(xdoc = Xapian::Document.new)
+      tg = Xapian::TermGenerator.new
+      tg.database = db.rw
+      tg.document = xdoc
+      if db.index_positions
+        tg.index_text(text)
+      else
+        tg.index_text_without_positions(text)
+      end
+      xdoc
+    end
 
+    # Convert the given object into a string suitable for staging as a
+    # Xapian value
     def convert_to_value(o)
       if o.respond_to?(:strftime)
         if o.respond_to?(:hour)
