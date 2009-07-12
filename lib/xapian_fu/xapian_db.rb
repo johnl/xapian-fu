@@ -233,6 +233,11 @@ module XapianFu
         @xdb = xdb
       end
 
+      # Build a new XapianDoc for this database
+      def new(doc = nil, options = { })
+        XapianDoc.new(doc, options.merge({ :xapian_db => @xdb }))
+      end
+
       # Add a document to the index. A document can be just a hash, the
       # keys representing field names and their values the data to be
       # indexed.  Or it can be a XapianDoc, or any object with a to_s method.
