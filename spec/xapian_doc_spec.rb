@@ -44,6 +44,19 @@ describe XapianDoc do
       xdoc.terms.last.term.should == "upon"
     end
 
+    it "should stem english words by default" do
+      xdb = XapianDb.new
+      xdoc = xdb.documents.new("She fished for fish").to_xapian_document
+      terms = xdoc.terms.collect { |t| t.term }
+      terms.should_not include "Zfished"
+    end
+
+    it "should not stem words when stemmer is set to false" do
+      xdb = XapianDb.new
+      xdoc = xdb.documents.new("She fished for fish", :stemmer => false).to_xapian_document
+      terms = xdoc.terms.collect { |t| t.term if t.term =~ /^Z/ }.compact
+      terms.should be_empty
+    end
   end
 
 end

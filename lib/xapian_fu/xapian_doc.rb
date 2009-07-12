@@ -21,6 +21,7 @@ module XapianFu
         doc = match.document
         @match = match
         @weight = @match.weight
+        @stemmer = options[:stemmer] || :english
       end
 
       # Handle initialisation from a Xapian::Document, which is
@@ -118,6 +119,26 @@ module XapianFu
     def update
       db.rw.replace_document(id, to_xapian_document)
     end
+    
+    
+    # Set the stemmer to use for this document.  Accepts any string
+    # that the Xapian::Stem class accepts (Either the English name for
+    # the language or the two letter ISO639 code). Can also be an
+    # existing Xapian::Stem object.
+    def stemmer=(s)
+      @stemmer = s
+    end
+    
+    # Return a Xapian::Stem object for the language set by stemmer=
+    def stemmer
+      if @stemmer.is_a? Xapian::Stem
+        @stemmer
+      elsif @stemmer.is_a?(String) or @stemmer.is_a?(Symbol)
+        @stemmer = Xapian::Stem.new(@stemmer.to_s)
+      else
+        @stemmer = Xapian::Stem.new("none")
+      end
+    end
 
     private
     
@@ -142,6 +163,7 @@ module XapianFu
       tg = Xapian::TermGenerator.new
       tg.database = db.rw
       tg.document = xdoc
+      tg.stemmer = stemmer
       if db.index_positions
         tg.index_text(text)
       else
