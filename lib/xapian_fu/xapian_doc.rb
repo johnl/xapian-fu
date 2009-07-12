@@ -6,7 +6,7 @@ module XapianFu
   
   class XapianDoc
     attr_reader :fields, :data, :weight, :match
-    attr_reader :xapian_document
+    attr_reader :xapian_document, :stemmer
     attr_accessor :id, :db
 
     # Expects a Xapian::Document, a Hash-like object, or anything that
@@ -21,7 +21,6 @@ module XapianFu
         doc = match.document
         @match = match
         @weight = @match.weight
-        @stemmer = options[:stemmer] || :english
       end
 
       # Handle initialisation from a Xapian::Document, which is
@@ -54,6 +53,9 @@ module XapianFu
       @weight = options[:weight] if options[:weight]
       @data = options[:data] if options[:data]
       @db = options[:xapian_db] if options[:xapian_db]
+      # If no stemmer is set, inherit the databases stemmer if
+      # possible, otherwise default to english.
+      @stemmer = options[:stemmer] 
     end
 
     # Retrieve the given Xapianvalue from the XapianDb.  <tt>vkey</tt>
@@ -129,14 +131,17 @@ module XapianFu
       @stemmer = s
     end
     
-    # Return a Xapian::Stem object for the language set by stemmer=
+    # Return the stemmer for this document, defaults to the databases
+    # stemmer if possible, and otherwise the English stemmer.
     def stemmer
-      if @stemmer.is_a? Xapian::Stem
-        @stemmer
-      elsif @stemmer.is_a?(String) or @stemmer.is_a?(Symbol)
-        @stemmer = Xapian::Stem.new(@stemmer.to_s)
+      if @stemmer.nil?
+        if @db
+          @stemmer = @db.stemmer
+        else
+          @stemmer = StemFactory.stemmer_for(:english)
+        end
       else
-        @stemmer = Xapian::Stem.new("none")
+        @stemmer = StemFactory.stemmer_for(@stemmer)
       end
     end
 
@@ -193,6 +198,25 @@ module XapianFu
     end
     
   end
-  
+
+  class StemFactory
+    # Return a Xapian::Stem object for the given option. Accepts any
+    # string that the Xapian::Stem class accepts (Either the English
+    # name for the language or the two letter ISO639 code).
+    #
+    # If given false or nil, will return a "none" stemmer.
+    #
+    # It will also accept and return an existing Xapian::Stem object.
+    #
+    def self.stemmer_for(stemmer)
+      if stemmer.is_a? Xapian::Stem
+        stemmer
+      elsif stemmer.is_a?(String) or stemmer.is_a?(Symbol)
+        Xapian::Stem.new(stemmer.to_s)
+      else
+        Xapian::Stem.new("none")
+      end
+    end
+  end
   
 end

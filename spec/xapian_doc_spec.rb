@@ -44,11 +44,35 @@ describe XapianDoc do
       xdoc.terms.last.term.should == "upon"
     end
 
-    it "should stem english words by default" do
+    it "should stem English words by default" do
       xdb = XapianDb.new
       xdoc = xdb.documents.new("She fished for fish").to_xapian_document
       terms = xdoc.terms.collect { |t| t.term }
       terms.should_not include "Zfished"
+    end
+
+    it "should inherit the databases stemmer by default" do
+      xdb = XapianDb.new(:stemmer => :french)
+      xdoc = xdb.documents.new("majestueusement").to_xapian_document
+      xdoc.terms.first.term.should == 'Zmajestu'
+    end
+
+    stems = {
+      :german => { "aufeinander" => "aufeinand" },
+      :french => { "majestueusement" => "majestu" },
+      :swedish => { "kloekornas" => "kloek" },
+      :danish => { "indvendingerne" => "indvending" },
+      :russian => { "падшую", "падш" },
+      :italian => { "propagamento" => "propag" }
+    }
+    stems.keys.each do |lang|
+      stems[lang].each do |word, stem|
+        it "should stem #{lang.to_s.capitalize} words when the :stemmer option is set to :#{lang}" do
+          xdb = XapianDb.new
+          xdoc = xdb.documents.new(word, :stemmer => lang).to_xapian_document
+          xdoc.terms.first.term.should == 'Z'+stem
+        end
+      end
     end
 
     it "should not stem words when stemmer is set to false" do

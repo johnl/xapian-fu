@@ -76,6 +76,12 @@ module XapianFu
       @store_values += Array.new(1, options[:collapsible]).compact
       rw.flush if options[:create]
       @tx_mutex = Mutex.new
+      @stemmer = options[:stemmer]
+    end
+
+    # Return a new stemmer object for this database
+    def stemmer
+      StemFactory.stemmer_for(@stemmer)
     end
 
     # Return the writable Xapian database
