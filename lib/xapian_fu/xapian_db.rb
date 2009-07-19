@@ -3,6 +3,7 @@ module XapianFu
 
   require 'xapian'
   require 'xapian_doc'
+  require 'stopper_factory'
   require 'thread'
 
   class ConcurrencyError < XapianFuError ; end
@@ -76,12 +77,19 @@ module XapianFu
       @store_values += Array.new(1, options[:collapsible]).compact
       rw.flush if options[:create]
       @tx_mutex = Mutex.new
-      @stemmer = options[:stemmer]
+      @language = options[:language] || :english
+      @stemmer = options[:stemmer] || @language
+      @stopper = options[:stopper] || @language
     end
 
     # Return a new stemmer object for this database
     def stemmer
       StemFactory.stemmer_for(@stemmer)
+    end
+    
+    # Return the stopper object for this database
+    def stopper
+      StopperFactory.stopper_for(@stopper)
     end
 
     # Return the writable Xapian database

@@ -169,6 +169,7 @@ module XapianFu
       tg.database = db.rw
       tg.document = xdoc
       tg.stemmer = stemmer
+      tg.stopper = db.stopper
       if db.index_positions
         tg.index_text(text)
       else

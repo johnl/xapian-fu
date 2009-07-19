@@ -49,6 +49,7 @@ describe XapianDoc do
       xdoc = xdb.documents.new("She fished for fish").to_xapian_document
       terms = xdoc.terms.collect { |t| t.term }
       terms.should_not include "Zfished"
+      terms.should include "Zfish"
     end
 
     it "should inherit the databases stemmer by default" do
@@ -80,6 +81,16 @@ describe XapianDoc do
       xdoc = xdb.documents.new("She fished for fish", :stemmer => false).to_xapian_document
       terms = xdoc.terms.collect { |t| t.term if t.term =~ /^Z/ }.compact
       terms.should be_empty
+    end
+    
+    it "should not stem english stop words by default" do
+      xdb = XapianDb.new
+      xdoc = xdb.documents.new("And they made a cake", :stemmer => :english).to_xapian_document
+      terms = xdoc.terms.collect { |t| t.term }
+      terms.should_not include 'Zand'
+      terms.should_not include 'zmade'
+      terms.should_not include 'Za'
+      terms.should include 'Zcake'
     end
   end
 
