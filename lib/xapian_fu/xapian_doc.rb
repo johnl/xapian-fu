@@ -6,7 +6,7 @@ module XapianFu
   
   class XapianDoc
     attr_reader :fields, :data, :weight, :match
-    attr_reader :xapian_document, :stemmer
+    attr_reader :xapian_document, :stemmer, :stopper
     attr_accessor :id, :db
 
     # Expects a Xapian::Document, a Hash-like object, or anything that
@@ -55,7 +55,8 @@ module XapianFu
       @db = options[:xapian_db] if options[:xapian_db]
       # If no stemmer is set, inherit the databases stemmer if
       # possible, otherwise default to english.
-      @stemmer = options[:stemmer] 
+      @stemmer = options[:stemmer]
+      @stopper = options[:stopper]
     end
 
     # Retrieve the given Xapianvalue from the XapianDb.  <tt>vkey</tt>
@@ -130,7 +131,7 @@ module XapianFu
     def stemmer=(s)
       @stemmer = s
     end
-    
+
     # Return the stemmer for this document, defaults to the databases
     # stemmer if possible, and otherwise the English stemmer.
     def stemmer
@@ -143,6 +144,11 @@ module XapianFu
       else
         @stemmer = StemFactory.stemmer_for(@stemmer)
       end
+    end
+    
+    # Return the stopper for this document, if set at time of initialisation
+    def stopper
+      StopperFactory.stopper_for(@stopper) if @stopper 
     end
 
     private
@@ -169,7 +175,7 @@ module XapianFu
       tg.database = db.rw
       tg.document = xdoc
       tg.stemmer = stemmer
-      tg.stopper = db.stopper
+      tg.stopper = stopper || db.stopper
       if db.index_positions
         tg.index_text(text)
       else

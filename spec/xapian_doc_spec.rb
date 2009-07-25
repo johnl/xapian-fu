@@ -88,9 +88,24 @@ describe XapianDoc do
       xdoc = xdb.documents.new("And they made a cake", :stemmer => :english).to_xapian_document
       terms = xdoc.terms.collect { |t| t.term }
       terms.should_not include 'Zand'
-      terms.should_not include 'zmade'
       terms.should_not include 'Za'
       terms.should include 'Zcake'
+    end
+    
+    it "should allow setting the stopper on initialisation" do
+      xdb = XapianDb.new(:stopper => :english)
+      xdoc = xdb.documents.new("And they made a cake", :stopper => :french)
+      xdoc.stopper.call("ayantes").should == true
+      xdoc.stopper.call("and").should == false
+    end
+    
+    it "should support stop words encoded in utf8" do
+      xdb = XapianDb.new
+      xdoc = xdb.documents.new("и они made a cake", :stemmer => :russian, :stopper => :russian).to_xapian_document
+      terms = xdoc.terms.collect { |t| t.term }
+      terms.should_not include 'Zи'
+      terms.should_not include 'Zони'
+      terms.should include 'Zcake'      
     end
   end
 

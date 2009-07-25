@@ -27,15 +27,30 @@ describe StopperFactory do
       words.should include 'and'
       words.should include "they're"
     end
+    
+    %w(danish dutch english finnish french german hungarian italian norwegian portuguese russian spanish swedish).each do |lang|
+      describe lang do
+        it "should return an array of words" do
+          words = StopperFactory.stop_words_for(lang.to_sym)
+          words.should_not be_empty
+        end
 
+        it "should return an array with no empty strings, nils or pipes" do
+          StopperFactory.stop_words_for(lang.to_sym).should_not include ''
+          StopperFactory.stop_words_for(lang.to_sym).should_not include nil
+          StopperFactory.stop_words_for(lang.to_sym).should_not include '|'
+        end
+      end
+    end
+
+  
     it "should raise a UnsupportedStopperLanguage error if there is no data for the given language" do
       Proc.new { StopperFactory.stop_words_for(:no_existy) }.should raise_error UnsupportedStopperLanguage
     end
 
-    it "should return an array with no empty strings, nils or pipes" do
-      StopperFactory.stop_words_for(:english).should_not include ''
-      StopperFactory.stop_words_for(:english).should_not include nil
-      StopperFactory.stop_words_for(:english).should_not include '|'
+    it "should return characters in utf8" do
+      words = StopperFactory.stop_words_for(:russian)
+      words.should include "человек"
     end
 
   end
