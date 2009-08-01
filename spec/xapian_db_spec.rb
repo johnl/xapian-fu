@@ -456,5 +456,30 @@ describe XapianDb do
     end
 
   end
-
+  
+  describe "stemmer" do
+    it "should return an english stemmer by default" do
+      xdb = XapianDb.new
+      xdb.stemmer.call("fishing").should == "fish"
+      xdb.stemmer.call("contournait").should == "contournait"
+    end
+    it "should return a stemmer for the database language" do
+      xdb = XapianDb.new(:language => :french)
+      xdb.stemmer.call("contournait").should == "contourn"
+      xdb.stemmer.call("fishing").should == "fishing"
+    end
+  end
+  
+  describe "stopper" do
+    it "should return an english stopper by default" do
+      xdb = XapianDb.new
+      xdb.stopper.call("and").should == true
+      xdb.stopper.call("avec").should == false
+    end
+    it "should return a stopper for the database language" do
+      xdb = XapianDb.new(:language => :french)
+      xdb.stopper.call("avec").should == true
+      xdb.stopper.call("and").should == false
+    end
+  end
 end
