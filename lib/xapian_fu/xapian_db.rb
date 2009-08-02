@@ -62,8 +62,7 @@ module XapianFu
 
   class XapianDb
     attr_reader :dir, :db_flag, :query_parser
-    attr_reader :store_fields, :store_values
-    attr_reader :index_positions, :language
+    attr_reader :store_values, :index_positions, :language
 
     def initialize( options = { } )
       options = { :index_positions => true }.merge(options)
@@ -72,16 +71,17 @@ module XapianFu
       @db_flag = Xapian::DB_OPEN
       @db_flag = Xapian::DB_CREATE_OR_OPEN if options[:create]
       @db_flag = Xapian::DB_CREATE_OR_OVERWRITE if options[:overwrite]
-      @store_fields = Array.new(1, options[:store]).compact
-      @store_values = Array.new(1, options[:sortable]).compact
-      @store_values += Array.new(1, options[:collapsible]).compact
+      @store_values = Array.new(1, options[:store])
+      @store_values += Array.new(1, options[:sortable])
+      @store_values += Array.new(1, options[:collapsible])
+      @store_values.compact!
       rw.flush if options[:create]
       @tx_mutex = Mutex.new
       @language = options[:language] || :english
       @stemmer = options[:stemmer] || @language
       @stopper = options[:stopper] || @language
     end
-
+    
     # Return a new stemmer object for this database
     def stemmer
       StemFactory.stemmer_for(@stemmer)

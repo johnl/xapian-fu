@@ -337,7 +337,6 @@ describe XapianDb do
     it "should add new docs with the given id" do
       xdb = XapianDb.new
       doc = xdb << XapianDoc.new(:id => 0xbeef, :title => "Once upon a time")
-      xdb.flush
       xdb.documents[0xbeef].id.should == 0xbeef
       doc.id.should == 0xbeef
     end
@@ -345,11 +344,9 @@ describe XapianDb do
     it "should replace docs that already have an id when adding to the db" do
       xdb = XapianDb.new
       doc = xdb << XapianDoc.new("Once upon a time")
-      xdb.flush
       xdb.size.should == 1
       doc.id.should == 1
       updated_doc = xdb << doc
-      xdb.flush
       xdb.size.should == 1
       updated_doc.id.should == doc.id
     end
@@ -358,66 +355,60 @@ describe XapianDb do
       xdb = XapianDb.new
       xdb << XapianDoc.new(:title => "Once upon a time")
       xdb.flush
-      xdb.documents.find(1).fields[:title].should be_nil
+      xdb.documents.find(1).values[:title].should be_empty
     end
 
-    it "should store fields declared as to be stored" do
+    it "should store fields declared to be stored as values" do
       xdb = XapianDb.new(:store => :title)
       xdb << XapianDoc.new(:title => "Once upon a time", :author => "Jim Jones")
-      xdb.flush
       doc = xdb.documents.find(1)
-      doc.fields[:title].should == "Once upon a time"
-      doc.fields[:author].should be_nil
+      doc.values[:title].should == "Once upon a time"
+      doc.values[:author].should be_empty
     end
 
     it "should store values declared as to be sortable" do
       xdb = XapianDb.new(:sortable => :age)
       xdb << XapianDoc.new(:age => "32", :author => "Jim Jones")
-      xdb.flush
       doc = xdb.documents.find(1)
-      doc.get_value(:age).should == "32"
+      doc.values.fetch(:age).should == "32"
     end
 
     it "should store time objects in a string sortable order when storing as values" do
       xdb = XapianDb.new(:sortable => :created_at)
       time = Time.now
       xdb << XapianDoc.new(:created_at => time, :title => "Teaching a Ferret to dance")
-      xdb.flush
       doc = xdb.documents.find(1)
-      doc.get_value(:created_at).should == time.utc.strftime("%Y%m%d%H%M%S")
+      doc.values.fetch(:created_at).should == time.utc.strftime("%Y%m%d%H%M%S")
     end
     
     it "should store date objects in a string sortable order when storing as values" do
       xdb = XapianDb.new(:sortable => :created_on)
       date = Date.today
       xdb << XapianDoc.new(:created_on => date, :title => "Digging up sphinxes")
-      xdb.flush
       doc = xdb.documents.find(1)
-      doc.get_value(:created_on).should == date.strftime("%Y%m%d")
+      doc.values.fetch(:created_on).should == date.strftime("%Y%m%d")
     end
 
     it "should store integers in a string sortable order when storing as values" do
       xdb = XapianDb.new(:sortable => :number)
       xdb << XapianDoc.new(:number => 57, :title => "Teaching a Ferret to dance")
-      xdb.flush
       doc = xdb.documents.find(1)
-      doc.get_value(:number).should == "%.10d" % 57
+      doc.values.fetch(:number).should == "%.10d" % 57
     end
 
     it "should store values declared as to be collapsible" do
       xdb = XapianDb.new(:collapsible => :group_id)
       xdb << XapianDoc.new(:group_id => "666", :author => "Jim Jones")
-      xdb.flush
       doc = xdb.documents.find(1)
-      doc.get_value(:group_id).should == "666"
+      doc.values.fetch(:group_id).should == "666"
     end
 
     it "should store data in the database" do
       xdb = XapianDb.new
-      xdb << XapianDoc.new({ :text => "once upon a time" }, :data => { :thing => 0xdeadbeef })
+      xdb << XapianDoc.new({ :text => "once upon a time" }, :data => Marshal::dump({ :thing => 0xdeadbeef }))
       xdb.size.should == 1
       doc = xdb.documents[1]
-      doc.data.should == { :thing => 0xdeadbeef }
+      Marshal::load(doc.data).should == { :thing => 0xdeadbeef }
     end
   end
 

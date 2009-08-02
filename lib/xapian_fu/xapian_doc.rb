@@ -1,4 +1,5 @@
 module XapianFu
+  require 'xapian_doc_value_accessor'
   
   class XapianDbNotSet < XapianFuError ; end
   class XapianDocNotSet < XapianFuError ; end
@@ -30,17 +31,6 @@ module XapianFu
       if doc.is_a?(Xapian::Document)
         @xapian_document = doc
         @id = doc.docid
-        begin
-          xdoc_data = Marshal::load(doc.data) unless doc.data.empty?
-        rescue ArgumentError
-          @data = nil
-        end
-        if xdoc_data.is_a? Hash
-          @data = xdoc_data.delete(:__data)
-          @fields = xdoc_data
-        else
-          @data = xdoc_data
-        end
       # Handle initialisation from a hash-like object
       elsif doc.respond_to?(:has_key?) and doc.respond_to?("[]")
         @fields = doc
@@ -57,16 +47,14 @@ module XapianFu
       @db = options[:xapian_db] if options[:xapian_db]
     end
 
-    # Retrieve the given Xapianvalue from the XapianDb.  <tt>vkey</tt>
-    # can be a symbol or string, in which case it's hashed to get an
-    # integer value number. Or you can give the integer value number
-    # if you know it.
-    def get_value(vkey)
-      raise XapianDocNotSet unless @xapian_document
-      vkey = vkey.to_s.hash unless vkey.is_a? Integer
-      @xapian_document.value(vkey)
+    def data
+      @data ||= xapian_document.data
     end
 
+    def values
+      @value_accessor ||= XapianDocValueAccessor.new(self)
+    end
+    
     # Return a list of terms that the db has for this document.
     def terms
       raise XapianFu::XapianDbNotSet unless db      
@@ -78,9 +66,13 @@ module XapianFu
     def to_xapian_document
       raise XapianFu::XapianDbNotSet unless db
       xdoc = Xapian::Document.new
-      add_stored_fields_to_xapian_doc(xdoc)
-      add_stored_values_to_xapian_doc(xdoc)
+      xdoc.data = data
+      add_values_to_xapian_doc(xdoc)
       generate_terms(xdoc)
+    end
+    
+    def xapian_document
+      @xapian_document ||= Xapian::Document.new
     end
 
     # Return text for indexing from the fields
@@ -199,10 +191,10 @@ module XapianFu
       xdoc
     end
     
-    def add_stored_values_to_xapian_doc(xdoc = Xapian::Document.new)
-      stored_values = fields.reject { |k,v| ! db.store_values.include? k }
-      stored_values.each do |k,v|
-        xdoc.add_value(k.to_s.hash, convert_to_value(v))
+    # Add all the fields to be stored as XapianDb values
+    def add_values_to_xapian_doc(xdoc = Xapian::Document.new)
+      db.store_values.each do |key|
+        xdoc.add_value(key.to_s.hash, convert_to_value(fields[key]))
       end
       xdoc
     end
@@ -243,7 +235,8 @@ module XapianFu
     end
     
   end
-
+  
+  
   class StemFactory
     # Return a Xapian::Stem object for the given option. Accepts any
     # string that the Xapian::Stem class accepts (Either the English
