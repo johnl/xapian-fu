@@ -77,10 +77,9 @@ module XapianFu
 
     # Return text for indexing from the fields
     def text
-      fields_text = fields.keys.collect do |key|
+      fields.keys.collect do |key|
         convert_to_value(fields[key])
       end
-      fields_text.join(' ')
     end
     
     # Compare IDs with another XapianDoc
@@ -205,11 +204,11 @@ module XapianFu
       tg.database = db.rw
       tg.document = xdoc
       tg.stemmer = stemmer
-      tg.stopper = stopper || db.stopper
+      tg.stopper = stopper
       if db.index_positions
-        tg.index_text(text)
+        text.each { |t| tg.index_text(t) }
       else
-        tg.index_text_without_positions(text)
+        text.each { |t| tg.index_text_without_positions(t) }
       end
       xdoc
     end
