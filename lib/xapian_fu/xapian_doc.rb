@@ -6,7 +6,7 @@ module XapianFu
   
   class XapianDoc
     attr_reader :fields, :data, :weight, :match
-    attr_reader :xapian_document, :stemmer, :stopper
+    attr_reader :xapian_document
     attr_accessor :id, :db
 
     # Expects a Xapian::Document, a Hash-like object, or anything that
@@ -15,6 +15,8 @@ module XapianFu
     # <tt>:data</tt> to set some additional data to be stored with the
     # record in the database.
     def initialize(doc, options = {})
+      @options = options
+      
       @fields = {}
       if doc.is_a? Xapian::Match
         match = doc
@@ -53,10 +55,6 @@ module XapianFu
       @weight = options[:weight] if options[:weight]
       @data = options[:data] if options[:data]
       @db = options[:xapian_db] if options[:xapian_db]
-      # If no stemmer is set, inherit the databases stemmer if
-      # possible, otherwise default to english.
-      @stemmer = options[:stemmer]
-      @stopper = options[:stopper]
     end
 
     # Retrieve the given Xapianvalue from the XapianDb.  <tt>vkey</tt>
@@ -93,6 +91,7 @@ module XapianFu
       fields_text.join(' ')
     end
     
+    # Compare IDs with another XapianDoc
     def ==(b)
       if b.is_a?(XapianDoc)
         id == b.id
@@ -123,34 +122,73 @@ module XapianFu
       db.rw.replace_document(id, to_xapian_document)
     end
     
-    
     # Set the stemmer to use for this document.  Accepts any string
     # that the Xapian::Stem class accepts (Either the English name for
     # the language or the two letter ISO639 code). Can also be an
     # existing Xapian::Stem object.
     def stemmer=(s)
-      @stemmer = s
+      @stemmer = StemFactory.stemmer_for(s)
     end
 
-    # Return the stemmer for this document, defaults to the databases
-    # stemmer if possible, and otherwise the English stemmer.
+    # Return the stemmer for this document.  If not set on initialize
+    # by the :stemmer or :language option, it will try the database's
+    # stemmer and otherwise defaults to an English stemmer.
     def stemmer
-      if @stemmer.nil?
-        if @db
-          @stemmer = @db.stemmer
-        else
-          @stemmer = StemFactory.stemmer_for(:english)
-        end
+      if @stemmer
+        @stemmer
       else
+        @stemmer = 
+          if ! @options[:stemmer].nil?
+            @options[:stemmer]
+          elsif @options[:language]
+            @options[:language]
+          elsif db
+            db.stemmer
+          else
+            :english
+          end
         @stemmer = StemFactory.stemmer_for(@stemmer)
       end
     end
     
-    # Return the stopper for this document, if set at time of initialisation
+    # Return the stopper for this document.  If not set on initialize
+    # by the :stopper or :language option, it will try the database's
+    # stopper and otherwise default to an English stopper..
     def stopper
-      StopperFactory.stopper_for(@stopper) if @stopper 
+      if @stopper
+        @stopper
+      else
+        @stopper =
+          if ! @options[:stopper].nil?
+            @options[:stopper]
+          elsif @options[:language]
+            @options[:language]
+          elsif db
+            db.stopper
+          else
+            :english
+          end
+        @stopper = StopperFactory.stopper_for(@stopper)
+      end
     end
 
+    # Return this document's language which is set on initialize, inherited 
+    # from the database or defaults to :english
+    def language
+      if @language
+        @language
+      else
+        @language =
+          if ! @options[:language].nil?
+            @options[:language]
+          elsif db and db.language
+            db.language
+          else
+            :english
+          end
+      end
+    end
+    
     private
     
     def add_stored_fields_to_xapian_doc(xdoc = Xapian::Document.new)

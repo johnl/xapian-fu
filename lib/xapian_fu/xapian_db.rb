@@ -63,7 +63,7 @@ module XapianFu
   class XapianDb
     attr_reader :dir, :db_flag, :query_parser
     attr_reader :store_fields, :store_values
-    attr_reader :index_positions
+    attr_reader :index_positions, :language
 
     def initialize( options = { } )
       options = { :index_positions => true }.merge(options)
@@ -249,7 +249,8 @@ module XapianFu
 
       # Build a new XapianDoc for this database
       def new(doc = nil, options = { })
-        XapianDoc.new(doc, options.merge({ :xapian_db => @xdb }))
+        options = options.merge({ :xapian_db => @xdb })
+        XapianDoc.new(doc, options)
       end
 
       # Add a document to the index. A document can be just a hash, the

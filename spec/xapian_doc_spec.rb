@@ -109,4 +109,41 @@ describe XapianDoc do
     end
   end
 
+  describe "stemmer" do
+    it "should return the same stemmer as the database by default" do
+      xdb = XapianDb.new(:language => :french)
+      xdoc = xdb.documents.new("stink and bones")
+      xdoc.stemmer.call("contournait").should == "contourn"
+    end
+    it "should return a stemmer for the document language, overriding the db" do
+      xdb = XapianDb.new(:language => :english)
+      xdoc = xdb.documents.new("stink and bones", :language => :french)
+      xdoc.stemmer.call("contournait").should == "contourn"
+    end
+    it "should return a stemmer set by the :stemmer option, overriding the :language option and the db stemmer" do
+      xdb = XapianDb.new(:language => :german)
+      xdoc = xdb.documents.new("stink and bones", :language => :english, :stemmer => :french)
+      xdoc.stemmer.call("contournait").should == "contourn"
+    end
+     
+  end
+
+  describe "stopper" do
+    it "should return the same stopper as the database by default" do
+      xdb = XapianDb.new(:language => :french)
+      xdoc = xdb.documents.new("stink and bones")
+      xdoc.stopper.call("avec").should == true
+    end    
+    it "should return a stopper for the document language, overriding the db" do
+      xdb = XapianDb.new(:language => :english)
+      xdoc = xdb.documents.new("stink and bones", :language => :french)
+      xdoc.stopper.call("avec").should == true
+    end
+    it "should return a stopper set by the :stopper option, overriding the :language option and the db stopper" do
+      xdb = XapianDb.new(:language => :german)
+      xdoc = xdb.documents.new("stink and bones", :language => :english, :stopper => :french)
+      xdoc.stopper.call("avec").should == true
+    end    
+  end
+
 end
