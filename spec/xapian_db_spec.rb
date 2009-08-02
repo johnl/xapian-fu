@@ -365,6 +365,14 @@ describe XapianDb do
       doc.values[:title].should == "Once upon a time"
       doc.values[:author].should be_empty
     end
+    
+    it "should store fields declared as an array to be stored as values" do
+      xdb = XapianDb.new(:store => [:title, :author])
+      xdb << XapianDoc.new(:title => "Once upon a time", :author => "Jim Jones")
+      doc = xdb.documents.find(1)
+      doc.values[:title].should == "Once upon a time"
+      doc.values[:author].should == "Jim Jones"
+    end
 
     it "should store values declared as to be sortable" do
       xdb = XapianDb.new(:sortable => :age)

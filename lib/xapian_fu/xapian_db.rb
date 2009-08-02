@@ -71,10 +71,11 @@ module XapianFu
       @db_flag = Xapian::DB_OPEN
       @db_flag = Xapian::DB_CREATE_OR_OPEN if options[:create]
       @db_flag = Xapian::DB_CREATE_OR_OVERWRITE if options[:overwrite]
-      @store_values = Array.new(1, options[:store])
-      @store_values += Array.new(1, options[:sortable])
-      @store_values += Array.new(1, options[:collapsible])
-      @store_values.compact!
+      @store_values = []
+      @store_values << options[:store]
+      @store_values << options[:sortable]
+      @store_values << options[:collapsible]
+      @store_values = @store_values.flatten.uniq.compact
       rw.flush if options[:create]
       @tx_mutex = Mutex.new
       @language = options[:language] || :english

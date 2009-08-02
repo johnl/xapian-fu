@@ -2,7 +2,6 @@ module XapianFu
   class XapianDocValueAccessor
     def initialize(doc)
       @doc = doc
-      @values = { }
     end
     
     # Add the given <tt>value</tt> with the given <tt>key</tt> to the XapianDoc

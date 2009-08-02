@@ -15,8 +15,9 @@ them.
   db << { :title => 'Brokeback Mountain', :year => 2005 }
   db << { :title => 'Cold Mountain', :year => 2004 }
   db << { :title => 'Yes Man', :year => 2008 }
+	db.flush
   db.search("mountain").each do |match|
-    puts match.fields[:title]
+    puts match.values[:title]
   end
 
 == Ordering of results
