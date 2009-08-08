@@ -183,7 +183,7 @@ describe XapianDb do
       xdb.flush
       xdb.size.should == 1
     end
-
+    
     it "should index a string" do
       xdb = XapianDb.new
       xdb << "once upon a time"

@@ -26,7 +26,7 @@ describe XapianDoc do
       xdb = XapianDb.new
       doc = xdb.documents.new("once upon a time")
       doc.save
-      xdb.ro.positionlist(doc.id, "time").first.should == 4
+      xdb.ro.positionlist(doc.id, "time").first.should_not == nil
     end
 
     it "should not store positions when tokenizing when :index_positions is set to false" do
@@ -43,6 +43,16 @@ describe XapianDoc do
       xdoc.terms.last.should be_a_kind_of Xapian::Term
       xdoc.terms.last.term.should == "upon"
     end
+    
+    it "should tokenize the fields of a hash separately" do
+      xdb = XapianDb.new
+      xdoc = xdb.documents.new({ :text => "once upon a time", :title => "A story" }).to_xapian_document
+      terms = xdoc.terms.collect { |t| t.term }
+      terms.should include "XTEXTonce"
+      terms.should include "XTITLEstory"
+      terms.should_not include "XTEXTstory"
+    end
+
 
     it "should stem English words by default" do
       xdb = XapianDb.new
@@ -55,7 +65,8 @@ describe XapianDoc do
     it "should inherit the databases stemmer by default" do
       xdb = XapianDb.new(:stemmer => :french)
       xdoc = xdb.documents.new("majestueusement").to_xapian_document
-      xdoc.terms.first.term.should == 'Zmajestu'
+      terms = xdoc.terms.collect { |t| t.term }
+      terms.should include 'Zmajestu'
     end
 
     stems = {
@@ -71,7 +82,8 @@ describe XapianDoc do
         it "should stem #{lang.to_s.capitalize} words when the :stemmer option is set to :#{lang}" do
           xdb = XapianDb.new
           xdoc = xdb.documents.new(word, :stemmer => lang).to_xapian_document
-          xdoc.terms.first.term.should == 'Z'+stem
+          terms = xdoc.terms.collect { |t| t.term }
+          terms.should include 'Z'+stem
         end
       end
     end

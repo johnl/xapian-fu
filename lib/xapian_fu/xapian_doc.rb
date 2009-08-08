@@ -74,13 +74,6 @@ module XapianFu
     def xapian_document
       @xapian_document ||= Xapian::Document.new
     end
-
-    # Return text for indexing from the fields
-    def text
-      fields.keys.collect do |key|
-        convert_to_value(fields[key])
-      end
-    end
     
     # Compare IDs with another XapianDoc
     def ==(b)
@@ -205,10 +198,13 @@ module XapianFu
       tg.document = xdoc
       tg.stemmer = stemmer
       tg.stopper = stopper
-      if db.index_positions
-        text.each { |t| tg.index_text(t) }
-      else
-        text.each { |t| tg.index_text_without_positions(t) }
+      index_method = db.index_positions ? :index_text : :index_text_without_positions
+      fields.each do |k,v|
+        v = convert_to_value(v)
+        # add value with field name
+        tg.send(index_method, v, 1, 'X' + k.to_s.upcase)
+        # add value without field name
+        tg.send(index_method, v)
       end
       xdoc
     end
