@@ -20,6 +20,26 @@ module XapianFu
   # for most situations.  See the Xapian documentation for more
   # details.
   #
+  # The <tt>:boolean</tt> option enables or disables boolean
+  # queries. Set to true or false.
+  #
+  # The <tt>:boolean_anycase</tt> option enables or disables
+  # case-insensitive boolean queries.  Set to true or false.
+  #
+  # The <tt>:wildcards</tt> option enables or disables the use of
+  # wildcard terms in queries, such as "york*". Set to true or false.
+  #
+  # The <tt>:lovehate</tt> option enables or disables the use of + and
+  # - operators in queries, such as "+mickey -mouse". Set to true or false.
+  #
+  # The <tt>:spelling</tt> option enables or disables spelling
+  # correction on queries. Set to true or false. Requires the
+  # <tt>:database</tt> option.
+  #
+  # The <tt>:pure_not</tt> option enables or disables the use of
+  # queries that only exclude terms, such as "NOT apples". Set to true
+  # or false.
+  #
   class QueryParser
     
     attr_accessor :stemming_strategy, :default_op, :database
