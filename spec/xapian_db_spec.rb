@@ -481,4 +481,5 @@ describe XapianDb do
       xdb.stopper.call("and").should == false
     end
   end
+  
 end
