@@ -41,7 +41,7 @@ describe XapianDb do
   it "should return a nice string when inspect is called" do
     XapianDb.new.inspect.should =~ /XapianDb/
   end
-  
+
   describe "transaction" do
     it "should commit writes when the block completed successfully" do
       xdb = XapianDb.new(:dir => tmp_dir, :create => true)
@@ -183,7 +183,7 @@ describe XapianDb do
       xdb.flush
       xdb.size.should == 1
     end
-    
+
     it "should index a string" do
       xdb = XapianDb.new
       xdb << "once upon a time"
@@ -323,6 +323,19 @@ describe XapianDb do
       results.next_page.should == nil
       results.offset.should == 16
     end
+
+    it "should do searches with and without field names" do
+      xdb = XapianDb.new(:fields => [:name, :partner])
+      john = xdb << { :name => "John", :partner => "Louisa" }
+      katherine = xdb << { :name => "Katherine", :partner => "John" }
+      louisa = xdb << { :name => "Louisa", :partner => "John" }
+      xdb.search("name:john").should == [john]
+      xdb.search("partner:john").should == [katherine, louisa]
+      xdb.search("partner:louisa").should == [john]
+      xdb.search("louisa").should == [john,louisa]
+      xdb.search("john").should == [john,katherine,louisa]
+      xdb.search("john -name:john").should == [katherine,louisa]
+    end
   end
 
   describe "add_doc" do
@@ -365,7 +378,7 @@ describe XapianDb do
       doc.values[:title].should == "Once upon a time"
       doc.values[:author].should be_empty
     end
-    
+
     it "should store fields declared as an array to be stored as values" do
       xdb = XapianDb.new(:store => [:title, :author])
       xdb << XapianDoc.new(:title => "Once upon a time", :author => "Jim Jones")
@@ -388,7 +401,7 @@ describe XapianDb do
       doc = xdb.documents.find(1)
       doc.values.fetch(:created_at).should == time.utc.strftime("%Y%m%d%H%M%S")
     end
-    
+
     it "should store date objects in a string sortable order when storing as values" do
       xdb = XapianDb.new(:sortable => :created_on)
       date = Date.today
@@ -455,7 +468,7 @@ describe XapianDb do
     end
 
   end
-  
+
   describe "stemmer" do
     it "should return an english stemmer by default" do
       xdb = XapianDb.new
@@ -468,7 +481,7 @@ describe XapianDb do
       xdb.stemmer.call("fishing").should == "fishing"
     end
   end
-  
+
   describe "stopper" do
     it "should return an english stopper by default" do
       xdb = XapianDb.new
@@ -481,5 +494,17 @@ describe XapianDb do
       xdb.stopper.call("and").should == false
     end
   end
-  
+
+  describe "fields" do
+    it "should return an array of field names as set on initialize" do
+      xdb = XapianDb.new(:fields => [:name, :age])
+      xdb.fields.should include :name
+      xdb.fields.should include :age
+    end
+
+    it "should return an empty array by default" do
+      XapianDb.new.fields.should be_empty
+    end
+  end
+
 end

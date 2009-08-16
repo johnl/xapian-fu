@@ -1,11 +1,18 @@
-module XapianFu
+module XapianFu #:nodoc:
 
   # The XapianFu::QueryParser is responsible for building useful
   # Xapian::QueryParser objects.
   #
+  # The <tt>:fields</tt> option specifies the fields allowed in the
+  # query.  Settings <tt>:fields => [:name, :city]</tt> would allow
+  # searches such as <tt>"name:john city:Leeds"</tt> (assuming those
+  # fields were in the document when it was added to the database.)
+  # This options takes an array of symbols or strings representing the
+  # field names.
+  #
   # The <tt>:database</tt> option specifies the XapianFu::Database,
-  # necessary for calculating spelling corrections.  The database's 
-  # stemmer and stopper will also be used.
+  # necessary for calculating spelling corrections.  The database's
+  # stemmer, stopper and field list will also be used.
   #
   # The <tt>:default_op</tt> option specifies the search operator to
   # be used when not specified.  It takes the operations <tt>:or</tt>,
@@ -70,11 +77,14 @@ module XapianFu
         @query_parser
       else
         qp = Xapian::QueryParser.new
-        qp.database = xapian_database
-        qp.stopper = database.stopper
-        qp.stemmer = database.stemmer
+        qp.database = xapian_database if xapian_database
+        qp.stopper = database.stopper if database
+        qp.stemmer = database.stemmer if database
         qp.default_op = xapian_default_op
         qp.stemming_strategy = xapian_stemming_strategy
+        fields.each do |field|
+          qp.add_prefix(field.to_s.downcase, "X" + field.to_s.upcase)
+        end
         @query_parser = qp
       end
     end
@@ -141,6 +151,16 @@ module XapianFu
         database
       else
         nil
+      end
+    end
+    
+    def fields
+      if @options[:fields].is_a? Array
+        @options[:fields]
+      elsif database.is_a? XapianFu::XapianDb
+        database.fields
+      else
+        []
       end
     end
   end
