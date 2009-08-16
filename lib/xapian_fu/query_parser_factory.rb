@@ -1,0 +1,3 @@
+class QueryParser
+  
+end
