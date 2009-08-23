@@ -191,6 +191,7 @@ describe XapianDb do
       xdb << XapianDoc.new("once upon a time")
       xdb.size.should == 2
     end
+    
   end
 
   describe "search" do
@@ -372,19 +373,11 @@ describe XapianDb do
     end
 
     it "should store fields declared to be stored as values" do
-      xdb = XapianDb.new(:store => :title)
+      xdb = XapianDb.new(:fields => { :title => { :store => true } })
       xdb << XapianDoc.new(:title => "Once upon a time", :author => "Jim Jones")
       doc = xdb.documents.find(1)
       doc.values[:title].should == "Once upon a time"
       doc.values[:author].should be_empty
-    end
-
-    it "should store fields declared as an array to be stored as values" do
-      xdb = XapianDb.new(:store => [:title, :author])
-      xdb << XapianDoc.new(:title => "Once upon a time", :author => "Jim Jones")
-      doc = xdb.documents.find(1)
-      doc.values[:title].should == "Once upon a time"
-      doc.values[:author].should == "Jim Jones"
     end
 
     it "should store values declared as to be sortable" do
@@ -496,15 +489,63 @@ describe XapianDb do
   end
 
   describe "fields" do
-    it "should return an array of field names as set on initialize" do
+    it "should return a hash of field names set as an array with the :fields option using String as the default type" do
       xdb = XapianDb.new(:fields => [:name, :age])
-      xdb.fields.should include :name
-      xdb.fields.should include :age
+      xdb.fields[:name].should == String
+      xdb.fields[:age].should == String
+    end
+
+    it "should return a hash of field names set as a hash with the :fields option" do
+      xdb = XapianDb.new(:fields => { :name => String, :gender => String,
+                           :age => { :type => Integer } })
+      xdb.fields[:name].should == String
+      xdb.fields[:gender].should == String
+      xdb.fields[:age].should == Integer
     end
 
     it "should return an empty array by default" do
-      XapianDb.new.fields.should be_empty
+      XapianDb.new.fields.keys.should be_empty
+    end
+
+  end
+
+  describe "stored_values" do
+    it "should return an array of field names passed in the :store option" do
+      xdb = XapianDb.new(:store => [:name, :title])
+      xdb.store_values.should == [:name, :title]
+    end
+
+    it "should return an array of fields defined as storable in the :fields option" do
+      xdb = XapianDb.new(:fields => {
+                           :name => { :store => true },
+                           :title => { :store => true } })
+      xdb.store_values.should include :name
+      xdb.store_values.should include :title
+    end
+
+    it "should return an array of fields both passed in the :store option and defined as storable in the :fields option" do
+      xdb = XapianDb.new(:fields => {
+                           :name => { :store => true },
+                           :title => { :store => true } }, :store => [:name, :gender])
+      xdb.store_values.size == 3
+      [:gender, :title, :name].each { |f| xdb.store_values.should include f }
+    end
+  end
+
+  describe "unindexed_fields" do
+    it "should return an empty array by default" do
+      xdb = XapianDb.new(:fields => { :name => String, :title => String })
+      xdb.unindexed_fields.should == []
+    end
+    
+    it "should return fields defined as not indexed in the fields option" do
+      xdb = XapianDb.new(:fields => { 
+                           :name => { :type => String, :index => false },
+                           :title => String })
+      xdb.unindexed_fields.should include :name
+      xdb.unindexed_fields.should_not include :title
     end
   end
 
 end
+

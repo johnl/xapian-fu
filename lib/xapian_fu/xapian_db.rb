@@ -13,7 +13,7 @@ module XapianFu #:nodoc:
   # Raised when two operations are attempted concurrently when it is
   # not possible
   class ConcurrencyError < XapianFuError ; end
-  
+
   # Raised when a document is requested by id that doesn't exist in
   # the database
   class DocNotFound < XapianFuError ; end
@@ -56,7 +56,7 @@ module XapianFu #:nodoc:
   # The default for all is <tt>:english</tt>.
   #
   #   db = XapianDb.new(:language => :italian, :stopper => false)
-  # 
+  #
   # == Fields and values
   #
   # The <tt>:store</tt> option specifies which document fields should
@@ -76,37 +76,36 @@ module XapianFu #:nodoc:
   # db << { :filename => '/data/sounds.mp3', :size => 33 }
   # FIXME
   #
-  
+
   class XapianDb
     attr_reader :dir, :db_flag, :query_parser
     attr_reader :store_values, :index_positions, :language
-    attr_reader :fields
+    attr_reader :fields, :unindexed_fields
 
     def initialize( options = { } )
-      options = { :index_positions => true }.merge(options)
-      @dir = options[:dir]
-      @index_positions = options[:index_positions]
+      @options = { :index_positions => true }.merge(options)
+      @dir = @options[:dir]
+      @index_positions = @options[:index_positions]
       @db_flag = Xapian::DB_OPEN
-      @db_flag = Xapian::DB_CREATE_OR_OPEN if options[:create]
-      @db_flag = Xapian::DB_CREATE_OR_OVERWRITE if options[:overwrite]
-      @store_values = []
-      @store_values << options[:store]
-      @store_values << options[:sortable]
-      @store_values << options[:collapsible]
-      @store_values = @store_values.flatten.uniq.compact
-      rw.flush if options[:create]
+      @db_flag = Xapian::DB_CREATE_OR_OPEN if @options[:create]
+      @db_flag = Xapian::DB_CREATE_OR_OVERWRITE if @options[:overwrite]
+      rw.flush if @options[:create]
       @tx_mutex = Mutex.new
-      @language = options.fetch(:language, :english)
-      @stemmer = options.fetch(:stemmer, @language)
-      @stopper = options.fetch(:stopper, @language)
-      @fields = options[:fields] || []
+      @language = @options.fetch(:language, :english)
+      @stemmer = @options.fetch(:stemmer, @language)
+      @stopper = @options.fetch(:stopper, @language)
+      setup_fields(@options[:fields])
+      @store_values << @options[:store]
+      @store_values << @options[:sortable]
+      @store_values << @options[:collapsible]      
+      @store_values = @store_values.flatten.uniq.compact
     end
-    
+
     # Return a new stemmer object for this database
     def stemmer
       StemFactory.stemmer_for(@stemmer)
     end
-    
+
     # Return the stopper object for this database
     def stopper
       StopperFactory.stopper_for(@stopper)
@@ -137,11 +136,11 @@ module XapianFu #:nodoc:
     end
     alias_method "<<", :add_doc
 
-    # Conduct a search on the Xapian database, returning an array of 
+    # Conduct a search on the Xapian database, returning an array of
     # XapianDoc objects for the matches
     def search(q, options = {})
-      defaults = { :page => 1, :reverse => false, 
-        :boolean => true, :boolean_anycase => true, :wildcards => true, 
+      defaults = { :page => 1, :reverse => false,
+        :boolean => true, :boolean_anycase => true, :wildcards => true,
         :lovehate => true, :spelling => true, :pure_not => false }
       options = defaults.merge(options)
       page = options[:page].to_i rescue 1
@@ -151,21 +150,21 @@ module XapianFu #:nodoc:
       offset = page * per_page
       qp = XapianFu::QueryParser.new({ :database => self }.merge(options))
       query = qp.parse_query(q.to_s)
-      setup_ordering(enquiry, options[:order], options[:reverse]) 
+      setup_ordering(enquiry, options[:order], options[:reverse])
       if options[:collapse]
         enquiry.collapse_key = options[:collapse].to_s.hash
       end
       enquiry.query = query
-      ResultSet.new(:mset => enquiry.mset(offset, per_page), :current_page => page + 1, 
+      ResultSet.new(:mset => enquiry.mset(offset, per_page), :current_page => page + 1,
                     :per_page => per_page, :corrected_query => qp.corrected_query)
     end
 
-    # Run the given block in a XapianDB transaction.  Any changes to the 
+    # Run the given block in a XapianDB transaction.  Any changes to the
     # Xapian database made in the block will be atomically committed at the end.
-    # 
+    #
     # If an exception is raised by the block, all changes are discarded and the
     # exception re-raised.
-    # 
+    #
     # Xapian does not support multiple concurrent transactions on the
     # same Xapian database. Any attempts at this will be serialized by
     # XapianFu, which is not perfect but probably better than just
@@ -193,7 +192,7 @@ module XapianFu #:nodoc:
       rw.flush
       ro.reopen
     end
-    
+
 
     # return the current Xapian::Enquire object, or create a new one
     def enquiry
@@ -221,7 +220,7 @@ module XapianFu #:nodoc:
         @ro = rw
       end
     end
-    
+
     # Setup ordering for the given Xapian::Enquire objects
     def setup_ordering(enquiry, order = nil, reverse = true)
       if order.to_s == "id"
@@ -235,5 +234,36 @@ module XapianFu #:nodoc:
       end
       enquiry
     end
+
+    # Setup the fields hash and stored_values list from the given options
+    def setup_fields(field_options)
+      @fields = { }
+      @unindexed_fields = []
+      @store_values = []
+      return nil if field_options.nil?
+      default_opts = { 
+        :store => true,
+        :index => true,
+        :type => String
+      }
+      # Convert array argument to hash, with String as default type
+      if field_options.is_a? Array
+        fohash = { }
+        field_options.each { |f| fohash[f] = { :type => String } }
+        field_options = fohash
+      end
+      field_options.each do |name,opts|
+        # Handle simple setup by type only
+        opts = { :type => opts } unless opts.is_a? Hash
+        opts = default_opts.merge(opts)
+        @store_values << name if opts[:store]
+        @unindexed_fields << name if opts[:index] == false
+        @fields[name] = opts[:type]
+      end
+      @fields
+    end
+    
   end
+  
 end
+

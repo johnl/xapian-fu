@@ -53,6 +53,18 @@ describe XapianDoc do
       terms.should_not include "XTEXTstory"
     end
 
+    it "should not tokenize fields declared as not to be indexed" do
+      xdb = XapianDb.new(:fields => { :name => { :index => false } })
+      xdoc = xdb.documents.new({ :name => 'John Leach', :quote => 'Xapian Rocks' }).to_xapian_document
+      terms = xdoc.terms.collect { |t| t.term }
+      terms.should_not include 'XNAMEjohn'
+      terms.should_not include 'XNAMEleach'
+      terms.should_not include 'Zjohn'
+      terms.should_not include 'Zleach'
+      terms.should_not include 'john'
+      terms.should_not include 'leach'
+    end
+
 
     it "should stem English words by default" do
       xdb = XapianDb.new

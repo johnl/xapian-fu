@@ -82,8 +82,8 @@ module XapianFu #:nodoc:
         qp.stemmer = database.stemmer if database
         qp.default_op = xapian_default_op
         qp.stemming_strategy = xapian_stemming_strategy
-        fields.each do |field|
-          qp.add_prefix(field.to_s.downcase, "X" + field.to_s.upcase)
+        fields.each do |name, type|
+          qp.add_prefix(name.to_s.downcase, "X" + name.to_s.upcase)
         end
         @query_parser = qp
       end

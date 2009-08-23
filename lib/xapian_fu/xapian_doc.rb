@@ -175,12 +175,9 @@ module XapianFu
     
     private
     
-    def add_stored_fields_to_xapian_doc(xdoc = Xapian::Document.new)
-      # FIXME: performance!
-      stored_fields = fields.reject { |k,v| ! db.store_fields.include? k }
-      stored_fields[:__data] = data if data
-      xdoc.data = Marshal.dump(stored_fields) unless stored_fields.empty?
-      xdoc
+    # Array of field names not to run through the TermGenerator
+    def unindexed_fields
+      db ? db.unindexed_fields : []
     end
     
     # Add all the fields to be stored as XapianDb values
@@ -200,6 +197,7 @@ module XapianFu
       tg.stopper = stopper
       index_method = db.index_positions ? :index_text : :index_text_without_positions
       fields.each do |k,v|
+        next if unindexed_fields.include?(k)
         v = convert_to_value(v)
         # add value with field name
         tg.send(index_method, v, 1, 'X' + k.to_s.upcase)
