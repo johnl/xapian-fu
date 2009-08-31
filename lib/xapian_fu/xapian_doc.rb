@@ -4,7 +4,8 @@ module XapianFu
   class XapianDbNotSet < XapianFuError ; end
   class XapianDocNotSet < XapianFuError ; end
   class XapianTypeError < XapianFuError ; end
-  
+
+  # A XapianDoc represents a document in a XapianDb.
   class XapianDoc
     attr_reader :fields, :data, :weight, :match
     attr_reader :xapian_document
@@ -47,10 +48,14 @@ module XapianFu
       @db = options[:xapian_db] if options[:xapian_db]
     end
 
+    # The arbitrary data stored in the Xapian database with this
+    # document.  Returns an empty string if none available.
     def data
       @data ||= xapian_document.data
     end
 
+    # The XapianFu::XapianDocValueAccessor for accessing the values in
+    # this document.
     def values
       @value_accessor ||= XapianDocValueAccessor.new(self)
     end
@@ -65,12 +70,20 @@ module XapianFu
     # database. Requires that the db attribute has been set up.
     def to_xapian_document
       raise XapianFu::XapianDbNotSet unless db
-      xdoc = Xapian::Document.new
-      xdoc.data = data
-      add_values_to_xapian_doc(xdoc)
-      generate_terms(xdoc)
+      xapian_document.data = data
+      # Clear and add values
+      xapian_document.clear_values
+      add_values_to_xapian_document
+      # Clear and add terms
+      xapian_document.clear_terms      
+      generate_terms
+      xapian_document
     end
-    
+
+    # The Xapian::Document for this XapianFu::Document.  If this
+    # document was retrieved from a XapianDb then this will have been
+    # initialized by Xapian, otherwise a new Xapian::Document.new is
+    # allocated.
     def xapian_document
       @xapian_document ||= Xapian::Document.new
     end
@@ -91,7 +104,8 @@ module XapianFu
       s.join(' ') + ">"
     end
 
-    # Add this document to the Xapian Database, or replace it if it already exists
+    # Add this document to the Xapian Database, or replace it if it
+    # already exists.
     def save
       id ? update : create
     end
@@ -181,50 +195,30 @@ module XapianFu
     end
     
     # Add all the fields to be stored as XapianDb values
-    def add_values_to_xapian_doc(xdoc = Xapian::Document.new)
-      db.store_values.each do |key|
-        xdoc.add_value(key.to_s.hash, convert_to_value(fields[key]))
+    def add_values_to_xapian_document
+      db.store_values.collect do |key|
+        values[key] = fields[key]
+        key
       end
-      xdoc
     end
 
     # Run the Xapian term generator against this documents text
-    def generate_terms(xdoc = Xapian::Document.new)
+    def generate_terms
       tg = Xapian::TermGenerator.new
       tg.database = db.rw
-      tg.document = xdoc
+      tg.document = xapian_document
       tg.stemmer = stemmer
       tg.stopper = stopper
       index_method = db.index_positions ? :index_text : :index_text_without_positions
       fields.each do |k,v|
         next if unindexed_fields.include?(k)
-        v = convert_to_value(v)
+        v = v.to_s
         # add value with field name
-        tg.send(index_method, v, 1, 'X' + k.to_s.upcase)
+        tg.send(index_method, v.to_s, 1, 'X' + k.to_s.upcase)
         # add value without field name
-        tg.send(index_method, v)
+        tg.send(index_method, v.to_s)
       end
-      xdoc
-    end
-
-    # Convert the given object into a string suitable for staging as a
-    # Xapian value
-    def convert_to_value(o)
-      if o.respond_to?(:strftime)
-        if o.respond_to?(:hour)
-          # A Time-like object
-          o = o.utc if o.respond_to?(:utc)
-          o.strftime("%Y%m%d%H%M%S")
-        else
-          # A Date-like object
-          o.strftime("%Y%m%d")
-        end
-      elsif o.is_a? Integer
-        # Add 10 leading zeros
-        o = "%.10d" % o
-      else  
-        o.to_s
-      end
+      xapian_document
     end
     
   end

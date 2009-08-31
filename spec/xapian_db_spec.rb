@@ -159,7 +159,7 @@ describe XapianDb do
       end
 
       it "should return the doc with the highest specified stored value" do
-        xdb = XapianDb.new(:sortable => :number)
+        xdb = XapianDb.new(:fields => { :number => { :store => true } })
         xdb << { :id => 8, :number => "200" }
         xdb << { :id => 9, :number => "300" }
         xdb << { :id => 15, :number => "100"  }
@@ -387,29 +387,6 @@ describe XapianDb do
       doc.values.fetch(:age).should == "32"
     end
 
-    it "should store time objects in a string sortable order when storing as values" do
-      xdb = XapianDb.new(:sortable => :created_at)
-      time = Time.now
-      xdb << XapianDoc.new(:created_at => time, :title => "Teaching a Ferret to dance")
-      doc = xdb.documents.find(1)
-      doc.values.fetch(:created_at).should == time.utc.strftime("%Y%m%d%H%M%S")
-    end
-
-    it "should store date objects in a string sortable order when storing as values" do
-      xdb = XapianDb.new(:sortable => :created_on)
-      date = Date.today
-      xdb << XapianDoc.new(:created_on => date, :title => "Digging up sphinxes")
-      doc = xdb.documents.find(1)
-      doc.values.fetch(:created_on).should == date.strftime("%Y%m%d")
-    end
-
-    it "should store integers in a string sortable order when storing as values" do
-      xdb = XapianDb.new(:sortable => :number)
-      xdb << XapianDoc.new(:number => 57, :title => "Teaching a Ferret to dance")
-      doc = xdb.documents.find(1)
-      doc.values.fetch(:number).should == "%.10d" % 57
-    end
-
     it "should store values declared as to be collapsible" do
       xdb = XapianDb.new(:collapsible => :group_id)
       xdb << XapianDoc.new(:group_id => "666", :author => "Jim Jones")
@@ -497,10 +474,10 @@ describe XapianDb do
 
     it "should return a hash of field names set as a hash with the :fields option" do
       xdb = XapianDb.new(:fields => { :name => String, :gender => String,
-                           :age => { :type => Integer } })
+                           :age => { :type => Fixnum } })
       xdb.fields[:name].should == String
       xdb.fields[:gender].should == String
-      xdb.fields[:age].should == Integer
+      xdb.fields[:age].should == Fixnum
     end
 
     it "should return an empty array by default" do

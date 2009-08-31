@@ -65,6 +65,9 @@ describe XapianDoc do
       terms.should_not include 'leach'
     end
 
+    it "should convert Time instances to a useful format when tokenizing"
+    
+    it "should convert DateTime instancrs to a useful format when tokenizing"
 
     it "should stem English words by default" do
       xdb = XapianDb.new
