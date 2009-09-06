@@ -65,9 +65,29 @@ describe XapianDoc do
       terms.should_not include 'leach'
     end
 
-    it "should convert Time instances to a useful format when tokenizing"
+    it "should convert Time instances to a useful format when tokenizing" do
+      time = Time.now
+      xdb = XapianDb.new
+      xdoc = xdb.documents.new(:created_at => time).to_xapian_document
+      terms = xdoc.terms.collect { |t| t.term }
+      terms.should include time.utc.strftime("%Y%m%d%H%M%S")
+    end
     
-    it "should convert DateTime instancrs to a useful format when tokenizing"
+    it "should convert DateTime instances to a useful format when tokenizing" do
+      datetime = DateTime.now
+      xdb = XapianDb.new
+      xdoc = xdb.documents.new(:created_at => datetime).to_xapian_document
+      terms = xdoc.terms.collect { |t| t.term }
+      terms.should include datetime.strftime("%Y%m%d%H%M%S")
+    end
+
+    it "should convert Time instances to a useful format when tokenizing" do
+      date = Date.today
+      xdb = XapianDb.new
+      xdoc = xdb.documents.new(:created_on => date).to_xapian_document
+      terms = xdoc.terms.collect { |t| t.term }
+      terms.should include date.strftime("%Y%m%d")
+    end
 
     it "should stem English words by default" do
       xdb = XapianDb.new

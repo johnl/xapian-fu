@@ -1,3 +1,23 @@
+class Time
+  def to_xapian_fu_string
+    utc.strftime("%Y%m%d%H%M%S")
+  end
+end
+
+class Date
+  def to_xapian_fu_string
+    strftime("%Y%m%d")
+  end
+end
+
+require 'date'
+
+class DateTime
+  def to_xapian_fu_string
+    strftime("%Y%m%d%H%M%S")
+  end
+end
+
 module XapianFu
   require 'xapian_doc_value_accessor'
   
@@ -207,16 +227,20 @@ module XapianFu
       tg = Xapian::TermGenerator.new
       tg.database = db.rw
       tg.document = xapian_document
-      tg.stemmer = stemmer
       tg.stopper = stopper
+      tg.stemmer = stemmer      
       index_method = db.index_positions ? :index_text : :index_text_without_positions
       fields.each do |k,v|
         next if unindexed_fields.include?(k)
-        v = v.to_s
+        if v.respond_to?(:to_xapian_fu_string)
+          v = v.to_xapian_fu_string
+        else
+          v = v.to_s
+        end
         # add value with field name
-        tg.send(index_method, v.to_s, 1, 'X' + k.to_s.upcase)
+        tg.send(index_method, v, 1, 'X' + k.to_s.upcase)
         # add value without field name
-        tg.send(index_method, v.to_s)
+        tg.send(index_method, v)
       end
       xapian_document
     end
