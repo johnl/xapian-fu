@@ -1,5 +1,7 @@
 module XapianFu
-  # A XapianDocumentsAccessor is used to provide the XapianDb#documents interface
+  # A XapianDocumentsAccessor is used to provide the
+  # XapianDb#documents interface.  It is usually set up by a XapianDb
+  # so you shouldn't need to set up your own.
   class XapianDocumentsAccessor
     def initialize(xdb) #:nodoc:
       @xdb = xdb

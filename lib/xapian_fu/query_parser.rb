@@ -17,9 +17,9 @@ module XapianFu #:nodoc:
   # The <tt>:default_op</tt> option specifies the search operator to
   # be used when not specified.  It takes the operations <tt>:or</tt>,
   # <tt>:phrase</tt>, <tt>:and</tt> and <tt>:and_maybe</tt>.  The
-  # default is <tt>:and</tt>.  So for example, with the <tt>:or</tr>
-  # operation, a query "dog cat rabbit" will be parsed as "dog AND cat
-  # AND rabbit".
+  # default is <tt>:and</tt>.  So for example, with the <tt>:or</tt>
+  # operation, a query <tt>"dog cat rabbit"</tt> will be parsed as
+  # <tt>"dog AND cat AND rabbit"</tt>.
   #
   # The <tt>:stemming_strategy</tt> option specifies how terms in the
   # query should be stemmed.  It accepts <tt>:some</tt>, <tt>:all</tt>
@@ -34,22 +34,33 @@ module XapianFu #:nodoc:
   # case-insensitive boolean queries.  Set to true or false.
   #
   # The <tt>:wildcards</tt> option enables or disables the use of
-  # wildcard terms in queries, such as "york*". Set to true or false.
+  # wildcard terms in queries, such as <tt>"york*"</tt>. Set to true or false.
   #
-  # The <tt>:lovehate</tt> option enables or disables the use of + and
-  # - operators in queries, such as "+mickey -mouse". Set to true or false.
+  # The <tt>:lovehate</tt> option enables or disables the use of +/-
+  # operators in queries, such as <tt>"+mickey -mouse"</tt>. Set to true or
+  # false.
   #
   # The <tt>:spelling</tt> option enables or disables spelling
   # correction on queries. Set to true or false. Requires the
   # <tt>:database</tt> option.
   #
   # The <tt>:pure_not</tt> option enables or disables the use of
-  # queries that only exclude terms, such as "NOT apples". Set to true
+  # queries that only exclude terms, such as <tt>"NOT apples"</tt>. Set to true
   # or false.
   #
-  class QueryParser
+  class QueryParser #:notnew:
     
-    attr_accessor :stemming_strategy, :default_op, :database
+    # The stemming strategy to use when generating terms from a query.
+    # Defaults to <tt>:some</tt>
+    attr_accessor :stemming_strategy
+    
+    # The default operation when combining search terms.  Defaults to
+    # <tt>:and</tt>
+    attr_accessor :default_op
+    
+    # The database that this query is agains, used for setting up
+    # fields, stemming, stopping and spelling.
+    attr_accessor :database
 
     def initialize(options = { })
       @options = {
@@ -71,7 +82,7 @@ module XapianFu #:nodoc:
       query_parser.get_corrected_query_string
     end
 
-    # the current Xapian::QueryParser object
+    # The current Xapian::QueryParser object
     def query_parser
       if @query_parser
         @query_parser
@@ -153,7 +164,8 @@ module XapianFu #:nodoc:
         nil
       end
     end
-    
+
+    # An array of field names that will be recognised in this query
     def fields
       if @options[:fields].is_a? Array
         @options[:fields]

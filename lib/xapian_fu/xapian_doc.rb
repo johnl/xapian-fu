@@ -1,10 +1,10 @@
-class Time
+class Time #:nodoc:
   def to_xapian_fu_string
     utc.strftime("%Y%m%d%H%M%S")
   end
 end
 
-class Date
+class Date #:nodoc:
   def to_xapian_fu_string
     strftime("%Y%m%d")
   end
@@ -12,30 +12,58 @@ end
 
 require 'date'
 
-class DateTime
+class DateTime #:nodoc:
   def to_xapian_fu_string
     strftime("%Y%m%d%H%M%S")
   end
 end
 
-module XapianFu
+module XapianFu #:nodoc:
   require 'xapian_doc_value_accessor'
   
+  # Raised whenever a XapianDb is needed but has not been provided,
+  # such as when retrieving the terms list for a document
   class XapianDbNotSet < XapianFuError ; end
-  class XapianDocNotSet < XapianFuError ; end
+  # Raised if a given value cannot be stored in the database (anything
+  # without a to_s method)
   class XapianTypeError < XapianFuError ; end
 
-  # A XapianDoc represents a document in a XapianDb.
+  # A XapianDoc represents a document in a XapianDb.  Searches return
+  # XapianDoc objects and they are used internally when adding new
+  # documents to the database.  You usually don't need to instantiate
+  # them yourself unless you're doing something a bit advanced.
   class XapianDoc
-    attr_reader :fields, :data, :weight, :match
-    attr_reader :xapian_document
-    attr_accessor :id, :db
+    
+    # A hash of the fields given to this object on initialize
+    attr_reader :fields
+    
+    # An abitrary blob of data stored alongside the document in the
+    # Xapian database.
+    attr_reader :data
+    
+    # The search score of this document when returned as part of a
+    # search result
+    attr_reader :weight
+    
+    # The Xapian::Match object for this document when returned as part
+    # of a search result.
+    attr_reader :match
+    
+    # The unsigned integer "primary key" for this document in the
+    # Xapian database.
+    attr_accessor :id
+    
+    # The XapianDb object that this document was retrieved from, or
+    # should be stored in.
+    attr_accessor :db
 
     # Expects a Xapian::Document, a Hash-like object, or anything that
     # with a to_s method.  Anything else raises a XapianTypeError.
-    # Options can be <tt>:weight</tt> to set the search weight or
-    # <tt>:data</tt> to set some additional data to be stored with the
-    # record in the database.
+    # The <tt>:weight</tt> option sets the search weight when setting
+    # up search results.  The <tt>:data</tt> option sets some
+    # additional data to be stored with the document in the database.
+    # The <tt>:xapian_db</tt> option sets the XapianDb to allow saves
+    # and term enumeration.
     def initialize(doc, options = {})
       @options = options
       
@@ -125,7 +153,7 @@ module XapianFu
     end
 
     # Add this document to the Xapian Database, or replace it if it
-    # already exists.
+    # already has an id.
     def save
       id ? update : create
     end

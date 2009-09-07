@@ -13,6 +13,20 @@ It also handles storing and retrieving hash entries as
 Xapian::Document values.  XapianFu basically gives you a persistent
 Hash with full text indexing (and ACID transactions).
 
+== Installation
+
+  sudo gem install xapian-fu
+
+== Documentation
+
+XapianFu::XapianDb is the corner-stone of XapianFu.  A XapianDb
+instance will handle setting up a XapianFu::XapianDocumentsAccessor
+for reading and writing documents from and to a Xapian database.  It
+makes use of XapianFu::QueryParser for parsing and setting up a query.
+
+XapianFu::XapianDoc represents a document retrieved from or to be
+added to a Xapian database.
+
 == Basic usage example
 
 Create a database, add 3 documents to it and then search and retrieve
@@ -23,7 +37,7 @@ them.
   db << { :title => 'Brokeback Mountain', :year => 2005 }
   db << { :title => 'Cold Mountain', :year => 2004 }
   db << { :title => 'Yes Man', :year => 2008 }
-	db.flush
+  db.flush
   db.search("mountain").each do |match|
     puts match.values[:title]
   end
@@ -33,7 +47,7 @@ them.
 Create an in-memory database, add 3 documents to it and then search and retrieve
 them in year order.
 
-  db = XapianDb.new(:store => [:title, :year], :sortable => [:year])
+  db = XapianDb.new(:store => [:title], :sortable => [:year])
   db << { :title => 'Brokeback Mountain', :year => 2005 }
   db << { :title => 'Cold Mountain', :year => 2004 }
   db << { :title => 'Yes Man', :year => 2008 }
@@ -41,10 +55,17 @@ them in year order.
 
 == will_paginate support
 
+Simple integration with the will_paginate Rails helpers.
+
   @results = db.search("mountain", :page => 1, :per_page => 5)
   will_paginate @results
 
 == Transactions support
+
+Ensure that a group of documents are either entirely added to the
+database or not at all - the transaction is aborted if an exception is
+raised inside the block.  The documents only become available to
+searches at the end of the block, when the transaction is committed.
 
   db = XapianDb.new(:store => [:title, :year], :sortable => [:year])
   db.transaction do
@@ -54,7 +75,28 @@ them in year order.
   end
   db.search("mountain")
 
+== Complete field definition examples
+
+Fields can be described in more detail using a hash. For example,
+telling XapianFu that a particular field is a Date, Fixnum or Bignum
+will allow very efficient on-disk storage and will ensure the same
+type of object is instantiated when returning those stored values.
+And in the case of Fixnum and Bignum, allows you to order search
+results without worrying about leading zeros.
+
+  db = XapianDb.new(:fields => { 
+                                 :title => { :store => true },
+                                 :released => { :type => Date, :store => true },
+                                 :votes => { :type => Fixnum, :store => true }
+                               })
+  db << { :title => 'Brokeback Mountain', :released => Date.parse('13th January 2006'), :votes => 105302 }
+  db << { :title => 'Cold Mountain, :released => Date.parse('2nd January 2004'), :votes => 45895 }
+  db << { :title => 'Yes Man', :released => Date.parse('26th December 2008'), :votes => 44936 }
+  db.search("mountain", :order => :votes)
+
 == Simple max value queries
+
+Find the document with the highest :year value
 
   db.documents.max(:year)
 
@@ -90,7 +132,7 @@ And any combinations of the above:
 
   db.search("(ruby OR sinatra) -rails xap*")
 
-== ActiveRecord Example
+== ActiveRecord Integration
 
 XapianFu always stores the :id field, so you can easily use it with
 something like ActiveRecord to index database records:
@@ -103,20 +145,34 @@ something like ActiveRecord to index database records:
 Combine it with the max value search to do batch delta updates by primary key:
 
   db = XapianDb.new(:dir => 'posts.db')
-  last_id = db.documents.max(:id)
-  new_posts = Post.find(:all, :conditions => ['id > ?', last_id])
+  latest_doc = db.documents.max(:id)
+  new_posts = Post.find(:all, :conditions => ['id > ?', lastest_doc.id])
   new_posts.each { |p| db << p.attributes }
 
 Or by :updated_at field if you prefer:
 
-  db = XapianDb.new(:dir => 'posts.db', :sortable => :updated_at)
-  last_updated_at = db.documents.max(:updated_at)
-  new_posts = Post.find(:all, :conditions => ['updated_at >= ?', DateTime.parse(last_updated_at])
+  db = XapianDb.new(:dir => 'posts.db', :fields => { :updated_at => { :type => Time, :store => true } })
+  last_updated_doc = db.documents.max(:updated_at)
+  new_posts = Post.find(:all, :conditions => ['updated_at >= ?', last_updated_doc.updated_at])
   new_posts.each { |p| db << p.attributes }
+
+Deleted records won't show up in results but can eventually put your
+result pagination out of whack. So, you'll need to track deletions
+yourself, either with a deleted_at field, some kind of delete log or
+perhaps by reindexing once in a while.
+
+  db = XapianDb.new(:dir => 'posts.db')
+  deleted_posts = Post.find(:all, :conditions => 'deleted_at is not null')
+  deleted_posts.each do |post| 
+    db.documents.delete(post.id)
+    post.destroy
+  end
 
 = More Info
 
 Author::  John Leach  (mailto:john@johnleach.co.uk)
 Copyright:: Copyright (c) 2009 John Leach
-License:: GPL v2
+License:: MIT (The Xapian library is GPL)
+Mailing list:: http://rubyforge.org/mailman/listinfo/xapian-fu-discuss
+Web page:: http://johnleach.co.uk/documents/xapian-fu
 Github:: http://github.com/johnl/xapian-fu/tree/master

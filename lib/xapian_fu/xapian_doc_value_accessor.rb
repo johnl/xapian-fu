@@ -1,4 +1,4 @@
-class Integer
+class Integer #:nodoc:
   def to_xapian_fu_storage_value
     [self].pack("l")
   end
@@ -8,7 +8,7 @@ class Integer
   end
 end
 
-class Bignum
+class Bignum #:nodoc:
   def to_xapian_fu_storage_value
     [self].pack("G")
   end
@@ -18,7 +18,7 @@ class Bignum
   end
 end
 
-class Float
+class Float #:nodoc:
   def to_xapian_fu_storage_value
     [self].pack("G")
   end
@@ -28,7 +28,7 @@ class Float
   end
 end
 
-class Time
+class Time #:nodoc:
   def to_xapian_fu_storage_value
     [self.utc.to_f].pack("G")
   end
@@ -38,7 +38,7 @@ class Time
   end
 end
 
-class Date
+class Date #:nodoc:
   def to_xapian_fu_storage_value
     to_s
   end
@@ -48,13 +48,23 @@ class Date
   end
 end
 
-module XapianFu
+module XapianFu #:nodoc:
+  
+  # A XapianDocValueAccessor is used to provide the XapianDoc#values
+  # interface to read and write field values to a XapianDb.  It is
+  # usually set up by a XapianDoc so you shouldn't need to set up your
+  # own.
   class XapianDocValueAccessor
-    def initialize(doc)
-      @doc = doc
+    def initialize(xapian_doc)
+      @doc = xapian_doc
     end
     
-    # Add the given <tt>value</tt> with the given <tt>key</tt> to the XapianDoc
+    # Add the given <tt>value</tt> with the given <tt>key</tt> to the
+    # XapianDoc.  If the value has a
+    # <tt>to_xapian_fu_storage_value</tt> method then it is used to
+    # generate the final value to be stored, otherwise <tt>to_s</tt>
+    # is used.  This is usually paired with a
+    # <tt>from_xapian_fu_storage_value</tt> class method on retrieval.
     def store(key, value, type = nil)
       type = @doc.db.fields[key] if type.nil? and @doc.db
       if type and value.is_a?(type) and value.respond_to?(:to_xapian_fu_storage_value)
@@ -71,6 +81,13 @@ module XapianFu
     # XapianDoc. <tt>key</tt> can be a symbol or string, in which case
     # it's hashed to get an integer value number. Or you can give the
     # integer value number if you know it.
+    #
+    # If the class specified in the database fields for this key (or
+    # as the optional argument) has a
+    # <tt>from_xapian_fu_storage_value</tt> method then it is used to
+    # instaniate the object from the stored value.  This is usually
+    # paired with a <tt>to_xapian_fu_storage_value</tt> instance
+    # method.
     #
     # Due to the design of Xapian, if the value does not exist then an
     # empty string is returned.

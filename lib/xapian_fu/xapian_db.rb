@@ -71,16 +71,36 @@ module XapianFu #:nodoc:
   # can be used to group ("collapse") results.  This also just does
   # the same thing as <tt>:store</tt> and is just available to be explicit.
   #
-  # db = XapianDb.new(:store => [:filename], :sortable => [:size])
-  # db << { :filename => '/data/music.mp3', :size => 15 }
-  # db << { :filename => '/data/sounds.mp3', :size => 33 }
-  # FIXME
+  # A more complete way of defining fields is available:
   #
-
-  class XapianDb
-    attr_reader :dir, :db_flag, :query_parser
-    attr_reader :store_values, :index_positions, :language
-    attr_reader :fields, :unindexed_fields
+  #   XapianDb.new(:fields => { :title => { :type => String },
+  #                             :slug => { :type => String, :index => false },
+  #                             :created_at => { :type => Time, :store => true },
+  #                             :votes => { :type => Fixnum, :store => true },
+  #                           })
+  #
+  # XapianFu will use the :type option when instantiating a store
+  # value, so you'll get back a Time object rather than the result of
+  # Time's to_s method as is the default.  Defining the type for
+  # numerical classes (such as Time, Fixnum and Bignum) allows
+  # XapianFu to to store them on-disk in a much more efficient way,
+  # and sort them efficiently (without having to resort to storing
+  # leading zeros or anything like that).
+  #
+  class XapianDb # :nonew:
+    # Path to the on-disk database. Nil if in-memory database
+    attr_reader :dir 
+    attr_reader :db_flag #:nodoc:
+    # An array of the fields that will be stored in the Xapian
+    attr_reader :store_values
+    # True if term positions will be stored
+    attr_reader :index_positions
+    # The default document language. Used for setting up stoppers and stemmers.
+    attr_reader :language
+    # An hash of field names and their types
+    attr_reader :fields
+    # An array of fields that will not be indexed
+    attr_reader :unindexed_fields
 
     def initialize( options = { } )
       @options = { :index_positions => true }.merge(options)
@@ -106,38 +126,62 @@ module XapianFu #:nodoc:
       StemFactory.stemmer_for(@stemmer)
     end
 
-    # Return the stopper object for this database
+    # The stopper object for this database
     def stopper
       StopperFactory.stopper_for(@stopper)
     end
 
-    # Return the writable Xapian database
+    # The writable Xapian database
     def rw
       @rw ||= setup_rw_db
     end
 
-    # Return the read-only Xapian database
+    # The read-only Xapian database
     def ro
       @ro ||= setup_ro_db
     end
 
-    # Return the number of docs in the Xapian database
+    # The number of docs in the Xapian database
     def size
       ro.doccount
     end
 
-    # Return the XapianDocumentsAccessor for this database
+    # The XapianFu::XapianDocumentsAccessor for this database
     def documents
       @documents_accessor ||= XapianDocumentsAccessor.new(self)
     end
 
+    # Short-cut to documents.add
     def add_doc(doc)
       documents.add(doc)
     end
     alias_method "<<", :add_doc
 
     # Conduct a search on the Xapian database, returning an array of
-    # XapianDoc objects for the matches
+    # XapianDoc objects for the matches.  
+    #
+    # The <tt>:limit</tt> option sets how many results to return.  For
+    # compatability with the <tt>will_paginate</tt> plugin, the
+    # <tt>:per_page</tt> option does the same thing (though overrides
+    # <tt>:limit</tt>).  Defaults to 10.
+    #
+    # The <tt>:page</tt> option sets which page of results to return.
+    # Defaults to 1.
+    # 
+    # The <tt>:order</tt> option specifies the stored field to order
+    # the results by (instead of the default search result weight).
+    # 
+    # The <tt>:reverse</tt> option reverses the order of the results,
+    # so lowest search weight first (or lowest stored field value
+    # first).
+    #
+    # The <tt>:collapse</tt> option specifies which stored field value
+    # to collapse (group) the results on.  Works a bit like the
+    # SQL <tt>GROUP BY</tt> behaviour
+    #
+    # For additional options on how the query is parsed, see
+    # XapianFu::QueryParser
+    
     def search(q, options = {})
       defaults = { :page => 1, :reverse => false,
         :boolean => true, :boolean_anycase => true, :wildcards => true,
@@ -150,6 +194,7 @@ module XapianFu #:nodoc:
       offset = page * per_page
       qp = XapianFu::QueryParser.new({ :database => self }.merge(options))
       query = qp.parse_query(q.to_s)
+      enquiry = Xapian::Enquire.new(ro)
       setup_ordering(enquiry, options[:order], options[:reverse])
       if options[:collapse]
         enquiry.collapse_key = options[:collapse].to_s.hash
@@ -191,12 +236,6 @@ module XapianFu #:nodoc:
       raise ConcurrencyError if @tx_mutex.locked?
       rw.flush
       ro.reopen
-    end
-
-
-    # return the current Xapian::Enquire object, or create a new one
-    def enquiry
-      @enquiry ||= Xapian::Enquire.new(ro)
     end
 
     private
