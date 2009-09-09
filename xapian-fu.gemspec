@@ -1,6 +1,6 @@
 Gem::Specification.new do |s|
   s.name    = 'xapian-fu'
-  s.version = '1.0'
+  s.version = '1.0.1'
   s.date    = '2009-09-09'
   s.rubyforge_project = "xapian-fu"
   

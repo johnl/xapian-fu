@@ -109,7 +109,6 @@ module XapianFu #:nodoc:
       @db_flag = Xapian::DB_OPEN
       @db_flag = Xapian::DB_CREATE_OR_OPEN if @options[:create]
       @db_flag = Xapian::DB_CREATE_OR_OVERWRITE if @options[:overwrite]
-      rw.flush if @options[:create]
       @tx_mutex = Mutex.new
       @language = @options.fetch(:language, :english)
       @stemmer = @options.fetch(:stemmer, @language)
@@ -244,6 +243,8 @@ module XapianFu #:nodoc:
     def setup_rw_db
       if dir
         @rw = Xapian::WritableDatabase.new(dir, db_flag)
+        @rw.flush if @options[:create]
+        @rw
       else
         # In memory database
         @rw = Xapian::inmemory_open

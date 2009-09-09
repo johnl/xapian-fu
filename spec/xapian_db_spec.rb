@@ -21,16 +21,26 @@ describe XapianDb do
 
     it "should make an on-disk database when given a :dir option" do
       xdb = XapianDb.new(:dir => tmp_dir, :create => true)
+      xdb.rw
       File.exists?(tmp_dir).should be_true
       xdb.should respond_to(:dir)
       xdb.dir.should == tmp_dir
       xdb.rw.should be_a_kind_of(Xapian::WritableDatabase)
       xdb.ro.should be_a_kind_of(Xapian::Database)
     end
+    
+  end
+
+  it "should lazily create the on-disk database when rw is used" do
+    xdb = XapianDb.new(:dir => tmp_dir, :create => true)
+    File.exists?(tmp_dir).should be_false
+    xdb.rw
+    File.exists?(tmp_dir).should be_true    
   end
 
   it "should flush documents to the index when flush is called" do
     xdb = XapianDb.new(:dir => tmp_dir, :create => true)
+    xdb.flush
     xdb.size.should == 0
     xdb << "Once upon a time"
     xdb.size.should == 0
