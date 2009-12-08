@@ -1,0 +1,1 @@
+require 'xapian_fu'
