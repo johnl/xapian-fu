@@ -1,3 +1,4 @@
+require 'rubygems'
 require 'spec/rake/spectask'
 
 desc "Run all specs in spec directory"

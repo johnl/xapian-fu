@@ -268,7 +268,7 @@ module XapianFu #:nodoc:
         enquiry.sort_by_value!((1 << 32)-1, reverse)
         enquiry.docid_order = reverse ? Xapian::Enquire::DESCENDING : Xapian::Enquire::ASCENDING
       elsif order.is_a? String or order.is_a? Symbol
-        enquiry.sort_by_value!(order.to_s.hash, reverse)
+        enquiry.sort_by_value!(XapianDocValueAccessor.value_key(order), reverse)
       else
         enquiry.sort_by_relevance!
       end

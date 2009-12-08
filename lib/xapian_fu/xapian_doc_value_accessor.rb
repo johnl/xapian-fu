@@ -72,7 +72,7 @@ module XapianFu #:nodoc:
       else
         converted_value = value.to_s
       end
-      @doc.xapian_document.add_value(value_key(key), converted_value)
+      @doc.xapian_document.add_value(XapianDocValueAccessor.value_key(key), converted_value)
       value
     end
     alias_method "[]=", :store
@@ -92,7 +92,7 @@ module XapianFu #:nodoc:
     # Due to the design of Xapian, if the value does not exist then an
     # empty string is returned.
     def fetch(key, type = nil)
-      value = @doc.xapian_document.value(value_key(key))
+      value = @doc.xapian_document.value(XapianDocValueAccessor.value_key(key))
       type = @doc.db.fields[key] if type.nil? and @doc.db
       if type and type.respond_to?(:from_xapian_fu_storage_value)
         type.from_xapian_fu_storage_value(value)
@@ -110,16 +110,14 @@ module XapianFu #:nodoc:
     # Remove the value with the given key from the XapianDoc and return it
     def delete(key)
       value = fetch(key)
-      @doc.xapian_document.remove_value(value_key(key))
+      @doc.xapian_document.remove_value(XapianDocValueAccessor.value_key(key))
       value
     end
 
-    private
-
     # Convert the given key to an integer that can be used as a Xapian
     # value number
-    def value_key(key)
-      key.is_a?(Integer) ? key : key.to_s.hash
+    def self.value_key(key)
+      (key.is_a?(Integer) ? key : key.to_s.hash) & 0xffffffff
     end    
   end
 end
