@@ -196,7 +196,7 @@ module XapianFu #:nodoc:
       enquiry = Xapian::Enquire.new(ro)
       setup_ordering(enquiry, options[:order], options[:reverse])
       if options[:collapse]
-        enquiry.collapse_key = options[:collapse].to_s.hash
+        enquiry.collapse_key = XapianDocValueAccessor.value_key(options[:collapse])
       end
       enquiry.query = query
       ResultSet.new(:mset => enquiry.mset(offset, per_page), :current_page => page + 1,

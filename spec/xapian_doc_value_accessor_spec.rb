@@ -5,6 +5,11 @@ require 'fileutils'
 
 describe XapianDocValueAccessor do
 
+  describe "value_key" do
+    it "should return the crc32 of the given string" do
+      XapianDocValueAccessor.value_key("louisa").should == 4040578532
+    end
+  end
   it "should store and fetch values like a hash" do
     values = XapianDocValueAccessor.new(XapianDoc.new(nil))
     values.store(:city, "Leeds").should == "Leeds"
@@ -52,7 +57,7 @@ describe XapianDocValueAccessor do
     time = Time.now
     doc = xdb.documents.new(:created_at => time)
     doc.values.store(:created_at, time).should == time
-    doc.values.fetch(:created_at).should == time
+    doc.values.fetch(:created_at).should be_close(time, 0.0001) # ignore milliseconds
     doc.to_xapian_document.values.first.value.should == [time.utc.to_f].pack("G")
   end
 

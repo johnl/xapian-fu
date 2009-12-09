@@ -1,3 +1,4 @@
+# encoding: utf-8
 require 'xapian'
 require 'lib/xapian_fu.rb'
 include XapianFu
@@ -109,7 +110,7 @@ describe XapianDoc do
       :french => { "majestueusement" => "majestu" },
       :swedish => { "kloekornas" => "kloek" },
       :danish => { "indvendingerne" => "indvending" },
-      :russian => { "падшую", "падш" },
+      :russian => { "падшую" => "падш" },
       :italian => { "propagamento" => "propag" }
     }
     stems.keys.each do |lang|

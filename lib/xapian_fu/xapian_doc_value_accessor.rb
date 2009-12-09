@@ -1,3 +1,5 @@
+require 'zlib'
+
 class Integer #:nodoc:
   def to_xapian_fu_storage_value
     [self].pack("l")
@@ -117,7 +119,7 @@ module XapianFu #:nodoc:
     # Convert the given key to an integer that can be used as a Xapian
     # value number
     def self.value_key(key)
-      (key.is_a?(Integer) ? key : key.to_s.hash) & 0xffffffff
+      (key.is_a?(Integer) ? key : Zlib.crc32(key.to_s))
     end    
   end
 end

@@ -1,3 +1,4 @@
+# encoding: utf-8
 require 'xapian'
 require 'lib/xapian_fu.rb'
 include XapianFu
