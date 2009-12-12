@@ -1,56 +1,72 @@
 require 'zlib'
 
 class Integer #:nodoc:
-  def to_xapian_fu_storage_value
-    [self].pack("l")
+  def self.to_xapian_fu_storage_value(value)
+    [value].pack("G")
   end
 
   def self.from_xapian_fu_storage_value(value)
-    value.unpack("l").first
+    value.unpack("G").first.truncate rescue nil
   end
 end
 
 class Bignum #:nodoc:
-  def to_xapian_fu_storage_value
-    [self].pack("G")
+  def self.to_xapian_fu_storage_value(value)
+    if value > 0x1fffffffffffff or value < -0x1fffffffffffff
+      raise XapianFu::ValueOutOfBounds
+    end
+    [value].pack("G")
   end
 
   def self.from_xapian_fu_storage_value(value)
-    value.unpack("G").first
+    value.unpack("G").first.truncate rescue nil
+  end
+end
+
+class Fixnum #:nodoc:
+  def self.to_xapian_fu_storage_value(value)
+    [value].pack("G")
+  end
+
+  def self.from_xapian_fu_storage_value(value)
+    value.unpack("G").first.truncate rescue nil
   end
 end
 
 class Float #:nodoc:
-  def to_xapian_fu_storage_value
-    [self].pack("G")
+  def self.to_xapian_fu_storage_value(value)
+    [value].pack("G")
   end
 
   def self.from_xapian_fu_storage_value(value)
-    value.unpack("G").first
+    value.unpack("G").first rescue nil
   end
 end
 
 class Time #:nodoc:
-  def to_xapian_fu_storage_value
-    [self.utc.to_f].pack("G")
+  def self.to_xapian_fu_storage_value(value)
+    [value.utc.to_f].pack("G")
   end
 
   def self.from_xapian_fu_storage_value(value)
-    Time.at(value.unpack("G").first)
+    Time.at(value.unpack("G").first) rescue nil
   end
 end
 
 class Date #:nodoc:
-  def to_xapian_fu_storage_value
-    to_s
+  def self.to_xapian_fu_storage_value(value)
+    value.to_s
   end
 
   def self.from_xapian_fu_storage_value(value)
-    self.parse(value)
+    self.parse(value) rescue nil
   end
 end
 
 module XapianFu #:nodoc:
+  
+  class ValueOutOfBounds < XapianFuError
+  end
   
   # A XapianDocValueAccessor is used to provide the XapianDoc#values
   # interface to read and write field values to a XapianDb.  It is
@@ -69,8 +85,8 @@ module XapianFu #:nodoc:
     # <tt>from_xapian_fu_storage_value</tt> class method on retrieval.
     def store(key, value, type = nil)
       type = @doc.db.fields[key] if type.nil? and @doc.db
-      if type and value.is_a?(type) and value.respond_to?(:to_xapian_fu_storage_value)
-        converted_value = value.to_xapian_fu_storage_value
+      if type and type.respond_to?(:to_xapian_fu_storage_value)
+        converted_value = type.to_xapian_fu_storage_value(value)
       else
         converted_value = value.to_s
       end

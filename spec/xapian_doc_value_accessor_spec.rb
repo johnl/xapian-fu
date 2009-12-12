@@ -24,25 +24,38 @@ describe XapianDocValueAccessor do
     lambda { values[:city] = "London" }.should change(doc.xapian_document, :values_count).by(1)
   end
 
-  it "should store fields defined as Fixnum as packed Long" do
+  it "should store fields defined as Fixnum as packed double-precision float, network byte order" do
     xdb = XapianDb.new(:fields => { :number => { :type => Fixnum, :store => true } })
-    [-83883, 256532, 0, 0x3fffffff].each do |number|
+    [-83883, 256532, 0, 0xffffff].each do |number|
       doc = xdb.documents.new(:number => number)
       doc.values.store(:number, number, Fixnum).should == number
       doc.values.fetch(:number, Fixnum).should == number
-      doc.to_xapian_document.values.first.value.should == [number].pack("l")
+      doc.to_xapian_document.values.first.value.should == [number].pack("G")
     end
   end  
 
-  it "should store fields defined as Bignum as packed Double-precision float, big-endian byte order" do
+  it "should store fields defined as Bignum as packed double-precision float, network byte order" do
     xdb = XapianDb.new(:fields => { :number => { :type => Bignum, :store => true } })
-    doc = xdb.documents.new(:number => 0x3fffffffffffff)
-    doc.values.store(:number, 0x3fffffffffffff).should == 0x3fffffffffffff
-    doc.values.fetch(:number).should == 0x3fffffffffffff
-    doc.to_xapian_document.values.first.value.should == [0x3fffffffffffff].pack("G")
+    [
+     (-0x1fffffffffffff..-0x1fffffffffffff + 10).to_a, 
+     (0x1fffffffffffff-10..0x1fffffffffffff).to_a
+    ].flatten.each do |number|
+      doc = xdb.documents.new(:number => number)
+      doc.values.store(:number, number, Bignum).should == number
+      doc.values.fetch(:number, Bignum).should == number
+      doc.to_xapian_document.values.first.value.should == [number].pack("G")
+    end
+  end
+
+  it "should raise an error when attempting to store Bignum values bigger or smaller than can be stored" do
+    xdb = XapianDb.new(:fields => { :number => { :type => Bignum, :store => true } })
+    [-(0x1fffffffffffff+1), 0x1fffffffffffff+1].each do |number|
+      doc = xdb.documents.new(:number => number)
+      lambda {  doc.values.store(:number, number, Bignum) }.should raise_error XapianFu::ValueOutOfBounds
+    end
   end
   
-  it "should store fields defined as Float as packed Double-precision float, big-endian byte order" do
+  it "should store fields defined as Float as packed double-precision float, network byte order" do
     xdb = XapianDb.new(:fields => { :number => { :type => Float, :store => true } })
     [-0.303393984588383833, 8.448488388488384, 1.0].each do |number|
       doc = xdb.documents.new(:number => number)
@@ -52,7 +65,7 @@ describe XapianDocValueAccessor do
     end      
   end
   
-  it "should store fields defined as Time in UTC as packed Double-precision float, big-endian byte order" do
+  it "should store fields defined as Time in UTC as packed double-precision float, network byte order" do
     xdb = XapianDb.new(:fields => { :created_at => { :type => Time, :store => true }})
     time = Time.now
     doc = xdb.documents.new(:created_at => time)
