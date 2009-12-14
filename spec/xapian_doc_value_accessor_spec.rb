@@ -2,6 +2,7 @@ require 'xapian'
 require 'lib/xapian_fu.rb'
 include XapianFu
 require 'fileutils'
+require 'fixtures/film_data'
 
 describe XapianDocValueAccessor do
 
@@ -10,6 +11,7 @@ describe XapianDocValueAccessor do
       XapianDocValueAccessor.value_key("louisa").should == 4040578532
     end
   end
+
   it "should store and fetch values like a hash" do
     values = XapianDocValueAccessor.new(XapianDoc.new(nil))
     values.store(:city, "Leeds").should == "Leeds"
@@ -105,6 +107,25 @@ describe XapianDocValueAccessor do
     doc.values.delete(:city).should == "London"
   end
 
+  film_data_path = File.join(File.dirname(__FILE__), "fixtures/film_data")
+  Dir.foreach(film_data_path) do |db_path|
+    next unless db_path =~ /.+~.+/
+    it "should read stored values from databases created by #{db_path}" do      
+      db = XapianDb.new(:dir => File.join(film_data_path, db_path),
+                        :fields => { 
+                          :title => { :type => String, :store => true },
+                          :released_on => { :type => Date, :store => true }, 
+                          :revenue => { :type => Integer, :store => true }
+                        })
+      FILM_DATA.size.times do |i|
+        doc = db.documents[i+1]
+        [:title, :released_on, :revenue].each do |field|
+          doc.values[field].should === FILM_DATA[i][field]  
+        end
+      end
+    end
+  end
+  
 end
 
 
