@@ -1,7 +1,7 @@
 Gem::Specification.new do |s|
   s.name    = 'xapian-fu'
-  s.version = '1.1.0'
-  s.date    = '2009-12-13'
+  s.version = '1.1.1'
+  s.date    = '2010-04-21'
   s.rubyforge_project = "xapian-fu"
   
   s.summary = "A Ruby interface to the Xapian search engine"

@@ -255,7 +255,7 @@ module XapianFu #:nodoc:
       tg = Xapian::TermGenerator.new
       tg.database = db.rw
       tg.document = xapian_document
-      tg.stopper = stopper
+      tg.stopper = stopper if stopper
       tg.stemmer = stemmer      
       index_method = db.index_positions ? :index_text : :index_text_without_positions
       fields.each do |k,v|

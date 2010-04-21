@@ -6,8 +6,11 @@ module XapianFu
 
     # Return a SimpleStopper loaded with stop words for the given language
     def self.stopper_for(lang)
-      if lang.is_a? Xapian::Stopper
+      case lang
+      when Xapian::Stopper
         lang
+      when false
+        false
       else
         lang = lang.to_s.downcase.strip
         if @stoppers[lang]

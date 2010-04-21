@@ -147,6 +147,13 @@ describe XapianDoc do
       xdoc.stopper.call("and").should == false
     end
     
+    it "should not stop words when stopper is set to false" do
+      xdb = XapianDb.new
+      xdoc = xdb.documents.new("And they made a cake", :stopper => false).to_xapian_document
+      terms = xdoc.terms.collect { |t| t.term }
+      terms.should include 'and'
+    end
+
     it "should support stop words encoded in utf8" do
       xdb = XapianDb.new
       xdoc = xdb.documents.new("и они made a cake", :stemmer => :russian, :stopper => :russian).to_xapian_document
