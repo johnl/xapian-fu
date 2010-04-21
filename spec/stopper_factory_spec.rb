@@ -17,6 +17,11 @@ describe StopperFactory do
       stopper = Xapian::SimpleStopper.new
       StopperFactory.stopper_for(stopper).should === stopper
     end
+
+    it "should return false when given false" do
+      stopper = StopperFactory.stopper_for(false)
+      stopper.should == false
+    end
   end
 
   describe "stop_words_for" do
