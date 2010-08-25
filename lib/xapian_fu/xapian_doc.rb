@@ -256,7 +256,8 @@ module XapianFu #:nodoc:
       tg.database = db.rw
       tg.document = xapian_document
       tg.stopper = stopper if stopper
-      tg.stemmer = stemmer      
+      tg.stemmer = stemmer
+      tg.set_flags Xapian::TermGenerator::FLAG_SPELLING if db.spelling
       index_method = db.index_positions ? :index_text : :index_text_without_positions
       fields.each do |k,v|
         next if unindexed_fields.include?(k)

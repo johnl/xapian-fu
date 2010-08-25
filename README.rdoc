@@ -62,6 +62,17 @@ Simple integration with the will_paginate Rails helpers.
   @results = db.search("mountain", :page => 1, :per_page => 5)
   will_paginate @results
 
+== Spelling correction
+
+Spelling suggestions, like Google's "Did you mean..." feature:
+
+  db = XapianDb.new(:dir => 'example.db', :create => true)
+  db << "There is a mouse in this house"
+  @results = db.search "moose house"
+  unless @results.corrected_query.empty?
+    puts "Did you mean '#{@results.corrected_query}'"
+  end
+
 == Transactions support
 
 Ensure that a group of documents are either entirely added to the
@@ -173,7 +184,7 @@ perhaps by reindexing once in a while.
 = More Info
 
 Author::  John Leach  (mailto:john@johnleach.co.uk)
-Copyright:: Copyright (c) 2009 John Leach
+Copyright:: Copyright (c) 2009-2010 John Leach
 License:: MIT (The Xapian library is GPL)
 Mailing list:: http://rubyforge.org/mailman/listinfo/xapian-fu-discuss
 Web page:: http://johnleach.co.uk/documents/xapian-fu

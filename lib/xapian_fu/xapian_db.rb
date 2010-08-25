@@ -57,6 +57,17 @@ module XapianFu #:nodoc:
   #
   #   db = XapianDb.new(:language => :italian, :stopper => false)
   #
+  # == Spelling suggestions
+  #
+  # The <tt>:spelling</tt> option controls generation of a spelling
+  # dictionary during indexing and its use during searches. When
+  # enabled, Xapian will build a dictionary of words for the database
+  # whilst indexing documents and will enable spelling suggestion by
+  # default for searches.  Building the dictionary will impact
+  # indexing performance and database size. It is enabled by default.
+  # See the search section for information on getting spelling
+  # correction information during searches.
+  #
   # == Fields and values
   #
   # The <tt>:store</tt> option specifies which document fields should
@@ -101,9 +112,11 @@ module XapianFu #:nodoc:
     attr_reader :fields
     # An array of fields that will not be indexed
     attr_reader :unindexed_fields
+    # Whether this db will generate a spelling dictionary during indexing
+    attr_reader :spelling
 
     def initialize( options = { } )
-      @options = { :index_positions => true }.merge(options)
+      @options = { :index_positions => true, :spelling => true }.merge(options)
       @dir = @options[:dir]
       @index_positions = @options[:index_positions]
       @db_flag = Xapian::DB_OPEN
@@ -118,6 +131,7 @@ module XapianFu #:nodoc:
       @store_values << @options[:sortable]
       @store_values << @options[:collapsible]      
       @store_values = @store_values.flatten.uniq.compact
+      @spelling = @options[:spelling]
     end
 
     # Return a new stemmer object for this database
@@ -130,12 +144,12 @@ module XapianFu #:nodoc:
       StopperFactory.stopper_for(@stopper)
     end
 
-    # The writable Xapian database
+    # The writable Xapian::WritableDatabase
     def rw
       @rw ||= setup_rw_db
     end
 
-    # The read-only Xapian database
+    # The read-only Xapian::Database
     def ro
       @ro ||= setup_ro_db
     end
@@ -157,7 +171,8 @@ module XapianFu #:nodoc:
     alias_method "<<", :add_doc
 
     # Conduct a search on the Xapian database, returning an array of
-    # XapianDoc objects for the matches.  
+    # XapianFu::XapianDoc objects for the matches wrapped in a
+    # XapianFu::ResultSet.
     #
     # The <tt>:limit</tt> option sets how many results to return.  For
     # compatability with the <tt>will_paginate</tt> plugin, the
@@ -178,13 +193,19 @@ module XapianFu #:nodoc:
     # to collapse (group) the results on.  Works a bit like the
     # SQL <tt>GROUP BY</tt> behaviour
     #
+    # The <tt>:spelling</tt> option controls whether spelling
+    # suggestions will be made for queries. It defaults to whatever
+    # the database spelling setting is (true by default).  When
+    # enabled, spelling suggestions are available using the
+    # XapianFu::ResultSet <tt>corrected_query</tt> method.
+    #
     # For additional options on how the query is parsed, see
     # XapianFu::QueryParser
     
     def search(q, options = {})
       defaults = { :page => 1, :reverse => false,
         :boolean => true, :boolean_anycase => true, :wildcards => true,
-        :lovehate => true, :spelling => true, :pure_not => false }
+        :lovehate => true, :spelling => spelling, :pure_not => false }
       options = defaults.merge(options)
       page = options[:page].to_i rescue 1
       page = page > 1 ? page - 1 : 0
@@ -247,6 +268,7 @@ module XapianFu #:nodoc:
         @rw
       else
         # In memory database
+        @spelling = false # inmemory doesn't support spelling
         @rw = Xapian::inmemory_open
       end
     end

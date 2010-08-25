@@ -275,14 +275,23 @@ describe XapianDb do
     end
 
     it "should provide a corrected spelling string by default" do
-      pending
-      xdb = XapianDb.new(:dir => tmp_dir + 'corrected_spelling', :create => true)
-      xdb.rw.add_spelling("house mouse louse")
+      xdb = XapianDb.new(:dir => tmp_dir + 'corrected_spelling', :create => true,
+                         :overwrite => true)
       xdb << "there is a mouse in this house"
       xdb.flush
-      results = xdb.search("moose")
-      results.corrected_query.should == "mouse"
+      results = xdb.search("there was a moose at our house")
+      results.corrected_query.should == "there was a mouse at our house"
     end
+
+    it "should not provide corrected spellings when disabled" do
+      xdb = XapianDb.new(:dir => tmp_dir + 'no_corrected_spelling', :create => true,
+                         :overwrite => true, :spelling => false)
+      xdb << "there is a mouse in this house"
+      xdb.flush
+      results = xdb.search("there was a moose at our house")
+      results.corrected_query.should == ""
+    end
+
 
     it "should do phrase matching by default when then :default_op option is :phrase"
 
