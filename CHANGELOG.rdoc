@@ -1,0 +1,31 @@
+=== 1.1.2 (26th August 2010)
+
+* Spelling correction support
+
+=== 1.1.1 (21st April 2010)
+
+* Support disabling stopping (as per documentation!)
+
+=== 1.1.0 (14th December 2009)
+
+* 64bit support and Ruby 1.9.1 support. On-disk format changed.
+
+=== 1.0.1 (9th September 2009)
+
+* First high quality release. On-disk format changed.
+
+  * Lots more documentation
+  * Ordering
+  *	Result size limiting
+  * Will Paginate support
+  * Stemming support
+  * Stopping support
+  * Field storage improvements
+  * Field tokenization and search support
+  * Query parsing refactor
+  * search options improvements
+
+=== 0.2 (June 2009)
+
+* Initial release
+
