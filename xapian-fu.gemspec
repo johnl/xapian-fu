@@ -1,7 +1,7 @@
 Gem::Specification.new do |s|
   s.name    = 'xapian-fu'
-  s.version = '1.1.1'
-  s.date    = '2010-04-21'
+  s.version = '1.1.2'
+  s.date    = '2010-08-26'
   s.rubyforge_project = "xapian-fu"
   
   s.summary = "A Ruby interface to the Xapian search engine"
@@ -9,7 +9,7 @@ Gem::Specification.new do |s|
   
   s.authors  = ['John Leach']
   s.email    = 'john@johnleach.co.uk'
-  s.homepage = 'http://github.com/johnl/xapian-fu/tree/master'
+  s.homepage = 'http://github.com/johnl/xapian-fu'
   
   s.has_rdoc = true
 
@@ -20,6 +20,6 @@ Gem::Specification.new do |s|
     '--main' << 'README.rdoc' <<
     '--line-numbers'
 
-  s.extra_rdoc_files = ["README.rdoc", "LICENSE"]
+  s.extra_rdoc_files = ["README.rdoc", "LICENSE", "CHANGELOG.rdoc"]
 
 end
