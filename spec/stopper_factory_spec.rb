@@ -33,7 +33,7 @@ describe StopperFactory do
       words.should include 'and'
       words.should include "they're"
     end
-    
+
     %w(danish dutch english finnish french german hungarian italian norwegian portuguese russian spanish swedish).each do |lang|
       describe lang do
         it "should return an array of words" do
@@ -49,7 +49,7 @@ describe StopperFactory do
       end
     end
 
-  
+
     it "should raise a UnsupportedStopperLanguage error if there is no data for the given language" do
       Proc.new { StopperFactory.stop_words_for(:no_existy) }.should raise_error UnsupportedStopperLanguage
     end

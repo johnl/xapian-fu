@@ -9,7 +9,7 @@ describe XapianDoc do
   it "should be equal to other XapianDoc objects with the same id" do
     XapianDoc.new(:id => 666).should == XapianDoc.new(:id => 666)
   end
-  
+
   it "should not be equal to other XapianDoc objects with different ids" do
     XapianDoc.new(:id => 666).should_not == XapianDoc.new(:id => 667)
   end
@@ -44,7 +44,7 @@ describe XapianDoc do
       xdoc.terms.last.should be_a_kind_of Xapian::Term
       xdoc.terms.last.term.should == "upon"
     end
-    
+
     it "should tokenize the fields of a hash separately" do
       xdb = XapianDb.new
       xdoc = xdb.documents.new({ :text => "once upon a time", :title => "A story" }).to_xapian_document
@@ -73,7 +73,7 @@ describe XapianDoc do
       terms = xdoc.terms.collect { |t| t.term }
       terms.should include time.utc.strftime("%Y%m%d%H%M%S")
     end
-    
+
     it "should convert DateTime instances to a useful format when tokenizing" do
       datetime = DateTime.now
       xdb = XapianDb.new
@@ -130,7 +130,7 @@ describe XapianDoc do
       terms = xdoc.terms.collect { |t| t.term if t.term =~ /^Z/ }.compact
       terms.should be_empty
     end
-    
+
     it "should not stem english stop words by default" do
       xdb = XapianDb.new
       xdoc = xdb.documents.new("And they made a cake", :stemmer => :english).to_xapian_document
@@ -139,14 +139,14 @@ describe XapianDoc do
       terms.should_not include 'Za'
       terms.should include 'Zcake'
     end
-    
+
     it "should allow setting the stopper on initialisation" do
       xdb = XapianDb.new(:stopper => :english)
       xdoc = xdb.documents.new("And they made a cake", :stopper => :french)
       xdoc.stopper.call("ayantes").should == true
       xdoc.stopper.call("and").should == false
     end
-    
+
     it "should not stop words when stopper is set to false" do
       xdb = XapianDb.new
       xdoc = xdb.documents.new("And they made a cake", :stopper => false).to_xapian_document
@@ -160,7 +160,7 @@ describe XapianDoc do
       terms = xdoc.terms.collect { |t| t.term }
       terms.should_not include 'Zи'
       terms.should_not include 'Zони'
-      terms.should include 'Zcake'      
+      terms.should include 'Zcake'
     end
   end
 
@@ -180,7 +180,7 @@ describe XapianDoc do
       xdoc = xdb.documents.new("stink and bones", :language => :english, :stemmer => :french)
       xdoc.stemmer.call("contournait").should == "contourn"
     end
-     
+
   end
 
   describe "stopper" do
@@ -188,7 +188,7 @@ describe XapianDoc do
       xdb = XapianDb.new(:language => :french)
       xdoc = xdb.documents.new("stink and bones")
       xdoc.stopper.call("avec").should == true
-    end    
+    end
     it "should return a stopper for the document language, overriding the db" do
       xdb = XapianDb.new(:language => :english)
       xdoc = xdb.documents.new("stink and bones", :language => :french)
@@ -198,7 +198,7 @@ describe XapianDoc do
       xdb = XapianDb.new(:language => :german)
       xdoc = xdb.documents.new("stink and bones", :language => :english, :stopper => :french)
       xdoc.stopper.call("avec").should == true
-    end    
+    end
   end
 
 end

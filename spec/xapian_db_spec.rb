@@ -28,14 +28,14 @@ describe XapianDb do
       xdb.rw.should be_a_kind_of(Xapian::WritableDatabase)
       xdb.ro.should be_a_kind_of(Xapian::Database)
     end
-    
+
   end
 
   it "should lazily create the on-disk database when rw is used" do
     xdb = XapianDb.new(:dir => tmp_dir, :create => true)
     File.exists?(tmp_dir).should be_false
     xdb.rw
-    File.exists?(tmp_dir).should be_true    
+    File.exists?(tmp_dir).should be_true
   end
 
   it "should flush documents to the index when flush is called" do
@@ -201,7 +201,7 @@ describe XapianDb do
       xdb << XapianDoc.new("once upon a time")
       xdb.size.should == 2
     end
-    
+
   end
 
   describe "search" do
@@ -533,9 +533,9 @@ describe XapianDb do
       xdb = XapianDb.new(:fields => { :name => String, :title => String })
       xdb.unindexed_fields.should == []
     end
-    
+
     it "should return fields defined as not indexed in the fields option" do
-      xdb = XapianDb.new(:fields => { 
+      xdb = XapianDb.new(:fields => {
                            :name => { :type => String, :index => false },
                            :title => String })
       xdb.unindexed_fields.should include :name
