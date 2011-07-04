@@ -277,10 +277,10 @@ describe XapianDb do
     it "should provide a corrected spelling string by default" do
       xdb = XapianDb.new(:dir => tmp_dir + 'corrected_spelling', :create => true,
                          :overwrite => true)
-      xdb << "there is a mouse in this house"
+      xdb << "there is a mouse in this building"
       xdb.flush
-      results = xdb.search("there was a moose at our house")
-      results.corrected_query.should == "there was a mouse at our house"
+      results = xdb.search("there was a moose at our building")
+      results.corrected_query.should == "there was a mouse at our building"
     end
 
     it "should not provide corrected spellings when disabled" do
