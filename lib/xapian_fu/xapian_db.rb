@@ -170,6 +170,19 @@ module XapianFu #:nodoc:
     end
     alias_method "<<", :add_doc
 
+    # Add a synonym to the database.
+    #
+    # If you want to search with synonym support, remember to add
+    # the option:
+    #
+    #   db.search("foo", :synonyms => true)
+    #
+    # Note that in-memory databases don't support synonyms.
+    #
+    def add_synonym(term, synonym)
+      rw.add_synonym(term, synonym)
+    end
+
     # Conduct a search on the Xapian database, returning an array of
     # XapianFu::XapianDoc objects for the matches wrapped in a
     # XapianFu::ResultSet.

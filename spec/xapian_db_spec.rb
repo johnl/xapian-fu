@@ -1,5 +1,5 @@
 require 'xapian'
-require 'lib/xapian_fu.rb'
+require File.expand_path('../lib/xapian_fu.rb', File.dirname(__FILE__))
 include XapianFu
 require 'fileutils'
 require 'date'
@@ -28,14 +28,14 @@ describe XapianDb do
       xdb.rw.should be_a_kind_of(Xapian::WritableDatabase)
       xdb.ro.should be_a_kind_of(Xapian::Database)
     end
-    
+
   end
 
   it "should lazily create the on-disk database when rw is used" do
     xdb = XapianDb.new(:dir => tmp_dir, :create => true)
     File.exists?(tmp_dir).should be_false
     xdb.rw
-    File.exists?(tmp_dir).should be_true    
+    File.exists?(tmp_dir).should be_true
   end
 
   it "should flush documents to the index when flush is called" do
@@ -201,7 +201,7 @@ describe XapianDb do
       xdb << XapianDoc.new("once upon a time")
       xdb.size.should == 2
     end
-    
+
   end
 
   describe "search" do
@@ -355,6 +355,22 @@ describe XapianDb do
       xdb.search("louisa").should == [john,louisa]
       xdb.search("john").should == [john,katherine,louisa]
       xdb.search("john -name:john").should == [katherine,louisa]
+    end
+
+    it "should recognize synonyms" do
+      xdb = XapianDb.new(:dir => tmp_dir + 'synonyms', :create => true,
+                         :fields => [:name], :overwrite => true)
+
+      xdb << {:name => "john"}
+      xdb.flush
+
+      xdb.search("jon", :synonyms => true).should be_empty
+
+      xdb.add_synonym("jon", "john")
+      xdb.flush
+
+      xdb.search("jon").should be_empty
+      xdb.search("jon", :synonyms => true).should_not be_empty
     end
   end
 
@@ -533,9 +549,9 @@ describe XapianDb do
       xdb = XapianDb.new(:fields => { :name => String, :title => String })
       xdb.unindexed_fields.should == []
     end
-    
+
     it "should return fields defined as not indexed in the fields option" do
-      xdb = XapianDb.new(:fields => { 
+      xdb = XapianDb.new(:fields => {
                            :name => { :type => String, :index => false },
                            :title => String })
       xdb.unindexed_fields.should include :name
