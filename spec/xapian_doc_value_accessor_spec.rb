@@ -1,5 +1,5 @@
 require 'xapian'
-require 'lib/xapian_fu.rb'
+require File.expand_path('../lib/xapian_fu.rb', File.dirname(__FILE__))
 include XapianFu
 require 'fileutils'
 require 'fixtures/film_data'
@@ -34,12 +34,12 @@ describe XapianDocValueAccessor do
       doc.values.fetch(:number, Fixnum).should == number
       doc.to_xapian_document.values.first.value.should == [number].pack("G")
     end
-  end  
+  end
 
   it "should store fields defined as Bignum as packed double-precision float, network byte order" do
     xdb = XapianDb.new(:fields => { :number => { :type => Bignum, :store => true } })
     [
-     (-0x1fffffffffffff..-0x1fffffffffffff + 10).to_a, 
+     (-0x1fffffffffffff..-0x1fffffffffffff + 10).to_a,
      (0x1fffffffffffff-10..0x1fffffffffffff).to_a
     ].flatten.each do |number|
       doc = xdb.documents.new(:number => number)
@@ -56,7 +56,7 @@ describe XapianDocValueAccessor do
       lambda {  doc.values.store(:number, number, Bignum) }.should raise_error XapianFu::ValueOutOfBounds
     end
   end
-  
+
   it "should store fields defined as Float as packed double-precision float, network byte order" do
     xdb = XapianDb.new(:fields => { :number => { :type => Float, :store => true } })
     [-0.303393984588383833, 8.448488388488384, 1.0].each do |number|
@@ -64,9 +64,9 @@ describe XapianDocValueAccessor do
       doc.values.store(:number, number).should == number
       doc.values.fetch(:number).should == number
       doc.to_xapian_document.values.first.value.should == [number].pack("G")
-    end      
+    end
   end
-  
+
   it "should store fields defined as Time in UTC as packed double-precision float, network byte order" do
     xdb = XapianDb.new(:fields => { :created_at => { :type => Time, :store => true }})
     time = Time.now
@@ -110,22 +110,22 @@ describe XapianDocValueAccessor do
   film_data_path = File.join(File.dirname(__FILE__), "fixtures/film_data")
   Dir.foreach(film_data_path) do |db_path|
     next unless db_path =~ /.+~.+/
-    it "should read stored values from databases created by #{db_path}" do      
+    it "should read stored values from databases created by #{db_path}" do
       db = XapianDb.new(:dir => File.join(film_data_path, db_path),
-                        :fields => { 
+                        :fields => {
                           :title => { :type => String, :store => true },
-                          :released_on => { :type => Date, :store => true }, 
+                          :released_on => { :type => Date, :store => true },
                           :revenue => { :type => Integer, :store => true }
                         })
       FILM_DATA.size.times do |i|
         doc = db.documents[i+1]
         [:title, :released_on, :revenue].each do |field|
-          doc.values[field].should === FILM_DATA[i][field]  
+          doc.values[field].should === FILM_DATA[i][field]
         end
       end
     end
   end
-  
+
 end
 
 
