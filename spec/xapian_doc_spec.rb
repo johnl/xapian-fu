@@ -118,8 +118,8 @@ describe XapianDoc do
         it "should stem #{lang.to_s.capitalize} words when the :stemmer option is set to :#{lang}" do
           xdb = XapianDb.new
           xdoc = xdb.documents.new(word, :stemmer => lang).to_xapian_document
-          terms = xdoc.terms.collect { |t| t.term }
-          terms.should include 'Z'+stem
+          terms = xdoc.terms.collect { |t| t.term.respond_to?(:force_encoding) ? t.term.force_encoding("UTF-8") : t.term }
+          terms.should include 'Z' + stem
         end
       end
     end
