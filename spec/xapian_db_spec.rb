@@ -293,11 +293,17 @@ describe XapianDb do
     end
 
 
-    it "should do phrase matching by default when then :default_op option is :phrase"
+    it "should do phrase matching by default when then :default_op option is :phrase" do
+      pending
+    end
 
-    it "should do AND_MAYBE matching by default when the :default_op option is :and_maybe"
+    it "should do AND_MAYBE matching by default when the :default_op option is :and_maybe" do
+      pending
+    end
 
-    it "should do PURE_NOT matching by default when the :default_op option is :pure_not"
+    it "should do PURE_NOT matching by default when the :default_op option is :pure_not" do
+      pending
+    end
 
     it "should page results when given the :page and :per_page options" do
       xdb = XapianDb.new
