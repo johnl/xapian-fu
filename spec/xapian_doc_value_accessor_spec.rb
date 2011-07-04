@@ -1,5 +1,5 @@
 require 'xapian'
-require 'lib/xapian_fu.rb'
+require File.expand_path('../lib/xapian_fu.rb', File.dirname(__FILE__))
 include XapianFu
 require 'fileutils'
 require 'fixtures/film_data'
