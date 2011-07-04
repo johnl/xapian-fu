@@ -356,6 +356,22 @@ describe XapianDb do
       xdb.search("john").should == [john,katherine,louisa]
       xdb.search("john -name:john").should == [katherine,louisa]
     end
+
+    it "should recognize synonyms" do
+      xdb = XapianDb.new(:dir => tmp_dir + 'synonyms', :create => true,
+                         :fields => [:name], :overwrite => true)
+
+      xdb << {:name => "john"}
+      xdb.flush
+
+      xdb.search("jon", :synonyms => true).should be_empty
+
+      xdb.add_synonym("jon", "john")
+      xdb.flush
+
+      xdb.search("jon").should be_empty
+      xdb.search("jon", :synonyms => true).should_not be_empty
+    end
   end
 
   describe "add_doc" do
