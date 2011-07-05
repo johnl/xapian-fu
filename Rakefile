@@ -1,4 +1,6 @@
 require 'rubygems'
+require 'bundler'
+Bundler::GemHelper.install_tasks
 require 'spec/rake/spectask'
 
 desc "Run all specs in spec directory"
