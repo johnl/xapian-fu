@@ -1,3 +1,9 @@
+=== 1.2 (5th July 2011)
+
+* Support for synonyms (Damian Janowski)
+* Fix some Ruby 1.9.2 issues, particularly reading utf8 stop files
+* Fixed specs to work with both xapian 1.0 and 1.2
+
 === 1.1.2 (26th August 2010)
 
 * Spelling correction support

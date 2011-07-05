@@ -1,7 +1,7 @@
 Gem::Specification.new do |s|
   s.name    = 'xapian-fu'
-  s.version = '1.1.2'
-  s.date    = '2010-08-26'
+  s.version = '1.2'
+  s.date    = '2011-07-05'
   s.rubyforge_project = "xapian-fu"
   
   s.summary = "A Ruby interface to the Xapian search engine"
@@ -11,15 +11,16 @@ Gem::Specification.new do |s|
   s.email    = 'john@johnleach.co.uk'
   s.homepage = 'http://github.com/johnl/xapian-fu'
   
-  s.has_rdoc = true
-
   s.files = Dir.glob("lib/**/*") + Dir.glob("examples/**/*")
   s.test_files = Dir.glob("spec/**/*")
+  s.require_paths = ["lib"]
 
   s.rdoc_options << '--title' << 'Xapian Fu' <<
     '--main' << 'README.rdoc' <<
     '--line-numbers'
 
   s.extra_rdoc_files = ["README.rdoc", "LICENSE", "CHANGELOG.rdoc"]
+
+  s.add_development_dependency("rspec", "1.3.0")
 
 end
