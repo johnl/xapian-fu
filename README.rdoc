@@ -139,7 +139,7 @@ Wildcards
 
 Phrase searches
 
-  db.search("'someone dropped a steamer in the gene pool'")
+  db.search("'a steamer in the gene pool'", :phrase => true)
 
 And any combinations of the above:
 

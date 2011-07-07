@@ -292,6 +292,22 @@ describe XapianDb do
       results.corrected_query.should == ""
     end
 
+    it "should do phrase matching when the :phrase option is set" do
+      xdb = XapianDb.new
+      doc1 = xdb << "the dog growls at the guitar"
+      doc2 = xdb << "the cat growls at the dog"
+      xdb.search('"the dog growls"').should == [doc1, doc2]
+      xdb.search('"the dog growls"', :phrase => true).should == [doc1]
+    end
+
+    it "should do phrase matching on fields" do
+      xdb = XapianDb.new(:fields => [:title])
+      doc1 = xdb << { :title => "the dog growls", :body => "at the guitar" }
+      doc2 = xdb << { :title => "the cat growls", :body => "at the dog" }
+      xdb.search('title:"the dog growls"', :phrase => true).should == [doc1]
+      xdb.search('title:"at the guitar"', :phrase => true).should == []
+    end
+
 
     it "should do phrase matching by default when then :default_op option is :phrase" do
       pending

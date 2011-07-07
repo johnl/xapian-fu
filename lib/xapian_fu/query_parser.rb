@@ -120,7 +120,7 @@ module XapianFu #:nodoc:
       if @flags
         @flags
       else
-        valid_flags = [:boolean, :boolean_anycase, :wildcards, :lovehate, :spelling, :pure_not, :synonyms]
+        valid_flags = [:boolean, :boolean_anycase, :wildcards, :lovehate, :spelling, :pure_not, :synonyms, :phrase]
         @flags = valid_flags.delete_if { |vf| not @options[vf] }
       end
     end
@@ -136,6 +136,7 @@ module XapianFu #:nodoc:
       qflags |= Xapian::QueryParser::FLAG_SPELLING_CORRECTION if flags.include?(:spelling)
       qflags |= Xapian::QueryParser::FLAG_PURE_NOT if flags.include?(:pure_not)
       qflags |= Xapian::QueryParser::FLAG_AUTO_SYNONYMS if flags.include?(:synonyms)
+      qflags |= Xapian::QueryParser::FLAG_PHRASE if flags.include?(:phrase)
       qflags
     end
 
