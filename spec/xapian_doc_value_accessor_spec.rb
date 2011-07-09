@@ -94,6 +94,22 @@ describe XapianDocValueAccessor do
     doc.to_xapian_document.values.first.value.should == date.to_s
   end
 
+  it "should store fields defined as Array" do
+    xdb = XapianDb.new(:fields => { :list => { :type => Array, :store => true }})
+    list = [1,2,3]
+    doc = xdb.documents.new(:list => list)
+    doc.values.store(:list, list).should == list
+    doc.values.fetch(:list).should == list
+  end
+
+  it "should store fields defined as Hash" do
+    xdb = XapianDb.new(:fields => { :h => { :type => Hash, :store => true }})
+    h = {:a => 1, :b => 2}
+    doc = xdb.documents.new(:h => h)
+    doc.values.store(:h, h).should == h
+    doc.values.fetch(:h).should == h
+  end
+
   it "should count the stored values when size is called" do
     doc = XapianDoc.new(nil)
     lambda { doc.values[:city] = "London" }.should change(doc.values, :size).by(1)

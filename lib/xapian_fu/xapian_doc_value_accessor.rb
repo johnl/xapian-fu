@@ -1,4 +1,5 @@
 require 'zlib'
+require 'yaml'
 
 class Integer #:nodoc:
   def self.to_xapian_fu_storage_value(value)
@@ -60,6 +61,26 @@ class Date #:nodoc:
 
   def self.from_xapian_fu_storage_value(value)
     self.parse(value) rescue nil
+  end
+end
+
+class Array #:nodoc:
+  def self.to_xapian_fu_storage_value(value)
+    YAML::dump(value)
+  end
+
+  def self.from_xapian_fu_storage_value(value)
+    YAML::load(value) rescue nil
+  end
+end
+
+class Hash #:nodoc:
+  def self.to_xapian_fu_storage_value(value)
+    YAML::dump(value)
+  end
+
+  def self.from_xapian_fu_storage_value(value)
+    YAML::load(value) rescue nil
   end
 end
 
