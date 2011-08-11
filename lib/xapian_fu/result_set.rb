@@ -18,7 +18,8 @@ module XapianFu
       @current_page = options[:current_page]
       @per_page = options[:per_page]
       @corrected_query = options[:corrected_query]
-      concat mset.matches.collect { |m| XapianDoc.new(m) }
+      doc_options = {:xapian_db => options[:xapian_db] }
+      concat mset.matches.collect { |m| XapianDoc.new(m, doc_options) }
     end
 
     # The estimated total number of matches this search could return
