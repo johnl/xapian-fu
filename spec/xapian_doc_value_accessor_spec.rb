@@ -123,6 +123,8 @@ describe XapianDocValueAccessor do
           doc.values[field].should === FILM_DATA[i][field]
         end
       end
+
+      db.search("cold mountain")[0].values[:revenue].should == 173_013_509
     end
   end
 

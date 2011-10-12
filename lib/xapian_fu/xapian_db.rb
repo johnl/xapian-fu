@@ -234,7 +234,7 @@ module XapianFu #:nodoc:
       end
       enquiry.query = query
       ResultSet.new(:mset => enquiry.mset(offset, per_page), :current_page => page + 1,
-                    :per_page => per_page, :corrected_query => qp.corrected_query)
+                    :per_page => per_page, :corrected_query => qp.corrected_query, :xapian_db => self)
     end
 
     # Run the given block in a XapianDB transaction.  Any changes to the
