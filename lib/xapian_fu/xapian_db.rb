@@ -114,6 +114,7 @@ module XapianFu #:nodoc:
     attr_reader :unindexed_fields
     # Whether this db will generate a spelling dictionary during indexing
     attr_reader :spelling
+    attr_reader :sortable_fields
 
     def initialize( options = { } )
       @options = { :index_positions => true, :spelling => true }.merge(options)
@@ -315,8 +316,9 @@ module XapianFu #:nodoc:
       @fields = { }
       @unindexed_fields = []
       @store_values = []
+      @sortable_fields = {}
       return nil if field_options.nil?
-      default_opts = { 
+      default_opts = {
         :store => true,
         :index => true,
         :type => String
@@ -332,6 +334,7 @@ module XapianFu #:nodoc:
         opts = { :type => opts } unless opts.is_a? Hash
         opts = default_opts.merge(opts)
         @store_values << name if opts[:store]
+        @sortable_fields[name] = {:range_prefix => opts[:range_prefix], :range_postfix => opts[:range_postfix]} if opts[:sortable]
         @unindexed_fields << name if opts[:index] == false
         @fields[name] = opts[:type]
       end

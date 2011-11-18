@@ -85,11 +85,17 @@ module XapianFu #:nodoc:
     # <tt>from_xapian_fu_storage_value</tt> class method on retrieval.
     def store(key, value, type = nil)
       type = @doc.db.fields[key] if type.nil? and @doc.db
-      if type and type.respond_to?(:to_xapian_fu_storage_value)
-        converted_value = type.to_xapian_fu_storage_value(value)
+
+      if @doc.db && @doc.db.sortable_fields.include?(key)
+        converted_value = Xapian.sortable_serialise(value)
       else
-        converted_value = value.to_s
+        if type and type.respond_to?(:to_xapian_fu_storage_value)
+          converted_value = type.to_xapian_fu_storage_value(value)
+        else
+          converted_value = value.to_s
+        end
       end
+
       @doc.xapian_document.add_value(XapianDocValueAccessor.value_key(key), converted_value)
       value
     end
