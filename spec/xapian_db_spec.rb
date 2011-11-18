@@ -444,6 +444,30 @@ describe XapianDb do
       doc.values.fetch(:age).should == "32"
     end
 
+    it "should allow range searches on sortable values with prefixes" do
+      xdb = XapianDb.new(:fields => { :price => { :type => Integer, :sortable => true, :range_prefix => "$" } })
+
+      xdb << XapianDoc.new(:price => 10)
+      xdb << XapianDoc.new(:price => 20)
+      xdb << XapianDoc.new(:price => 15)
+
+      docs = xdb.search("$10..15")
+
+      docs.map { |d| d.id }.should == [1, 3]
+    end
+
+    it "should allow range searches on sortable values with postfixes" do
+      xdb = XapianDb.new(:fields => { :age => { :type => Integer, :sortable => true, :range_postfix => "y" } })
+
+      xdb << XapianDoc.new(:age => 32)
+      xdb << XapianDoc.new(:age => 40)
+      xdb << XapianDoc.new(:age => 35)
+
+      docs = xdb.search("32..35y")
+
+      docs.map { |d| d.id }.should == [1, 3]
+    end
+
     it "should store values declared as to be collapsible" do
       xdb = XapianDb.new(:collapsible => :group_id)
       xdb << XapianDoc.new(:group_id => "666", :author => "Jim Jones")

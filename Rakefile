@@ -1,17 +1,16 @@
 require 'rubygems'
 require 'bundler'
 Bundler::GemHelper.install_tasks
-require 'spec/rake/spectask'
+require 'rspec/core/rake_task'
+require 'rdoc/task'
+
+task :default => :spec
 
 desc "Run all specs in spec directory"
-Spec::Rake::SpecTask.new do |t| 
-  t.spec_opts = ['--options', "\"spec/spec.opts\""]
-  t.spec_files = FileList['spec/*_spec.rb']
+RSpec::Core::RakeTask.new do |t|
 end
 
-require 'rake/rdoctask'
-
-Rake::RDocTask.new('rdoc') do |t|
+RDoc::Task.new('rdoc') do |t|
   t.rdoc_files.include('README.rdoc', 'lib/**/*.rb')
   t.main = 'README.rdoc'
   t.title = "XapianFu Documentation"

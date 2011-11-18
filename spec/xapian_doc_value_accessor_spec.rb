@@ -72,7 +72,7 @@ describe XapianDocValueAccessor do
     time = Time.now
     doc = xdb.documents.new(:created_at => time)
     doc.values.store(:created_at, time).should == time
-    doc.values.fetch(:created_at).should be_close(time, 0.0001) # ignore milliseconds
+    doc.values.fetch(:created_at).should be_within(0.0001).of(time) # ignore milliseconds
     doc.to_xapian_document.values.first.value.should == [time.utc.to_f].pack("G")
   end
 
@@ -81,7 +81,7 @@ describe XapianDocValueAccessor do
     datetime = DateTime.now
     doc = xdb.documents.new(:created_at => datetime)
     doc.values.store(:created_at, datetime).should == datetime
-    doc.values.fetch(:created_at).should be_close(datetime, 0.0001) # miliseconds are not stored
+    doc.values.fetch(:created_at).should be_within(0.0001).of(datetime) # miliseconds are not stored
     doc.to_xapian_document.values.first.value.should == datetime.to_s
   end
 

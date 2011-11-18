@@ -96,6 +96,15 @@ module XapianFu #:nodoc:
         fields.each do |name, type|
           qp.add_prefix(name.to_s.downcase, "X" + name.to_s.upcase)
         end
+
+        database.sortable_fields.each do |field, opts|
+          if opts[:range_prefix]
+            qp.add_valuerangeprocessor(Xapian::NumberValueRangeProcessor.new(XapianDocValueAccessor.value_key(field), opts[:range_prefix], true))
+          else
+            qp.add_valuerangeprocessor(Xapian::NumberValueRangeProcessor.new(XapianDocValueAccessor.value_key(field), opts[:range_postfix], false))
+          end
+        end if database
+
         @query_parser = qp
       end
     end
