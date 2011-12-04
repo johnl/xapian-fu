@@ -1,3 +1,7 @@
+=== 1.3.2 (4th December 2011)
+
+* Number range queries (Damian Janowski)
+
 === 1.3.1 (12th October 2011)
 
 * Fix casting of values on search. (Damian Janowski)
