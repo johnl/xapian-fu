@@ -1,6 +1,9 @@
+$:.push File.expand_path('../lib', __FILE__)
+require 'xapian_fu/version'
+
 Gem::Specification.new do |s|
   s.name    = 'xapian-fu'
-  s.version = '1.3.1'
+  s.version = XapianFu::VERSION
   s.date    = '2011-10-12'
   s.rubyforge_project = "xapian-fu"
   
@@ -21,6 +24,8 @@ Gem::Specification.new do |s|
 
   s.extra_rdoc_files = ["README.rdoc", "LICENSE", "CHANGELOG.rdoc"]
 
-  s.add_development_dependency("rspec", "1.3.0")
+  s.add_development_dependency("rspec", "~> 2.7.0")
+	s.add_development_dependency("rake")
+	s.add_development_dependency("rdoc")
 
 end
