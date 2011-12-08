@@ -100,8 +100,10 @@ module XapianFu #:nodoc:
         database.sortable_fields.each do |field, opts|
           if opts[:range_prefix]
             qp.add_valuerangeprocessor(Xapian::NumberValueRangeProcessor.new(XapianDocValueAccessor.value_key(field), opts[:range_prefix], true))
-          else
+          elsif opts[:range_postfix]
             qp.add_valuerangeprocessor(Xapian::NumberValueRangeProcessor.new(XapianDocValueAccessor.value_key(field), opts[:range_postfix], false))
+          else
+            qp.add_valuerangeprocessor(Xapian::NumberValueRangeProcessor.new(XapianDocValueAccessor.value_key(field)))
           end
         end if database
 
