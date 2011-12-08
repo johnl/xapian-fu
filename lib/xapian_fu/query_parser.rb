@@ -49,15 +49,15 @@ module XapianFu #:nodoc:
   # or false.
   #
   class QueryParser #:notnew:
-    
+
     # The stemming strategy to use when generating terms from a query.
     # Defaults to <tt>:some</tt>
     attr_accessor :stemming_strategy
-    
+
     # The default operation when combining search terms.  Defaults to
     # <tt>:and</tt>
     attr_accessor :default_op
-    
+
     # The database that this query is agains, used for setting up
     # fields, stemming, stopping and spelling.
     attr_accessor :database
@@ -98,13 +98,21 @@ module XapianFu #:nodoc:
         end
 
         database.sortable_fields.each do |field, opts|
-          if opts[:range_prefix]
-            qp.add_valuerangeprocessor(Xapian::NumberValueRangeProcessor.new(XapianDocValueAccessor.value_key(field), opts[:range_prefix], true))
-          elsif opts[:range_postfix]
-            qp.add_valuerangeprocessor(Xapian::NumberValueRangeProcessor.new(XapianDocValueAccessor.value_key(field), opts[:range_postfix], false))
+          prefix, string = nil
+
+          if opts[:range_postfix]
+            prefix = false
+            string = opts[:range_postfix]
           else
-            qp.add_valuerangeprocessor(Xapian::NumberValueRangeProcessor.new(XapianDocValueAccessor.value_key(field)))
+            prefix = true
+            string = opts[:range_prefix] || "#{field.to_s.downcase}:"
           end
+
+          qp.add_valuerangeprocessor(Xapian::NumberValueRangeProcessor.new(
+            XapianDocValueAccessor.value_key(field),
+            string,
+            prefix
+          ))
         end if database
 
         @query_parser = qp

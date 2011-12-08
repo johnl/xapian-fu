@@ -478,7 +478,7 @@ describe XapianDb do
       xdb << XapianDoc.new(:price => 20, :age => 35)
       xdb << XapianDoc.new(:price => 45, :age => 30)
 
-      docs = xdb.search("$20..40 OR 40..50")
+      docs = xdb.search("$20..40 OR age:40..50")
 
       docs.map { |d| d.id }.should == [1, 2]
     end
