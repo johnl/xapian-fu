@@ -202,6 +202,24 @@ describe XapianDb do
       xdb.size.should == 2
     end
 
+    it "should generate boolean terms for multiple values" do
+      xdb = XapianDb.new(:dir => tmp_dir, :create => true,
+                         :fields => {
+                           :name => { :index => true },
+                           :colors => { :boolean => true }
+                         }
+                        )
+
+      xdb << {:name => "Foo", :colors => [:red, :black]}
+      xdb << {:name => "Foo", :colors => [:red, :green]}
+      xdb << {:name => "Foo", :colors => [:blue, :yellow]}
+
+      xdb.flush
+
+      xdb.search("foo", :filter => {:colors => [:red]}).map(&:id).should == [1, 2]
+      xdb.search("foo", :filter => {:colors => [:black, :green]}).map(&:id).should == [1, 2]
+    end
+
   end
 
   describe "search" do
@@ -393,6 +411,33 @@ describe XapianDb do
 
       xdb.search("jon").should be_empty
       xdb.search("jon", :synonyms => true).should_not be_empty
+    end
+
+    it "should allow to search by boolean terms" do
+      xdb = XapianDb.new(:dir => tmp_dir, :create => true,
+                         :fields => {
+                           :name => { :index => true },
+                           :age => { :boolean => true },
+                           :city => { :boolean => true }
+                         }
+                        )
+
+      xdb << {:name => "John A", :age => 10, :city => "London"}
+      xdb << {:name => "John B", :age => 11, :city => "Liverpool"}
+      xdb << {:name => "John C", :age => 12, :city => "Liverpool"}
+
+      xdb.flush
+
+      xdb.search("john").size.should == 3
+      xdb.search("john", :filter => {:age => 10}).map(&:id).should == [1]
+      xdb.search("john", :filter => {:age => [10, 12]}).map(&:id).should == [1, 3]
+
+      xdb.search("john", :filter => {:age => 10, :city => "Liverpool"}).map(&:id).should == []
+      xdb.search("john", :filter => {:city => "Liverpool"}).map(&:id).should == [2, 3]
+      xdb.search("john", :filter => {:age => 11..15, :city => "Liverpool"}).map(&:id).should == [2, 3]
+
+      xdb.search("liverpool").should be_empty
+      xdb.search("city:liverpool").map(&:id).should == [2, 3]
     end
   end
 

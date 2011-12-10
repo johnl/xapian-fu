@@ -112,6 +112,8 @@ module XapianFu #:nodoc:
     attr_reader :fields
     # An array of fields that will not be indexed
     attr_reader :unindexed_fields
+    # An array of fields that will be treated as boolean terms
+    attr_reader :boolean_fields
     # Whether this db will generate a spelling dictionary during indexing
     attr_reader :spelling
     attr_reader :sortable_fields
@@ -318,12 +320,17 @@ module XapianFu #:nodoc:
       @unindexed_fields = []
       @store_values = []
       @sortable_fields = {}
+      @boolean_fields = []
       return nil if field_options.nil?
       default_opts = {
         :store => true,
         :index => true,
         :type => String
       }
+      boolean_default_opts = default_opts.merge(
+        :store => false,
+        :index => false
+      )
       # Convert array argument to hash, with String as default type
       if field_options.is_a? Array
         fohash = { }
@@ -333,10 +340,15 @@ module XapianFu #:nodoc:
       field_options.each do |name,opts|
         # Handle simple setup by type only
         opts = { :type => opts } unless opts.is_a? Hash
-        opts = default_opts.merge(opts)
+        if opts[:boolean]
+          opts = boolean_default_opts.merge(opts)
+        else
+          opts = default_opts.merge(opts)
+        end
         @store_values << name if opts[:store]
         @sortable_fields[name] = {:range_prefix => opts[:range_prefix], :range_postfix => opts[:range_postfix]} if opts[:sortable]
         @unindexed_fields << name if opts[:index] == false
+        @boolean_fields << name if opts[:boolean]
         @fields[name] = opts[:type]
       end
       @fields
@@ -348,6 +360,8 @@ module XapianFu #:nodoc:
 
         if sortable_fields[field]
           sortable_filter_query(field, values)
+        elsif boolean_fields.include?(field)
+          boolean_filter_query(field, values)
         end
       end
 
@@ -368,6 +382,14 @@ module XapianFu #:nodoc:
         else
           Xapian::Query.new(Xapian::Query::OP_VALUE_RANGE, slot, Xapian.sortable_serialise(from.to_f), Xapian.sortable_serialise(to.to_f))
         end
+      end
+
+      Xapian::Query.new(Xapian::Query::OP_OR, subqueries)
+    end
+
+    def boolean_filter_query(field, values)
+      subqueries = values.map do |value|
+        Xapian::Query.new("X#{field.to_s.upcase}#{value.to_s.downcase}")
       end
 
       Xapian::Query.new(Xapian::Query::OP_OR, subqueries)

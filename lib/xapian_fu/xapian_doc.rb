@@ -20,7 +20,7 @@ end
 
 module XapianFu #:nodoc:
   require 'xapian_doc_value_accessor'
-  
+
   # Raised whenever a XapianDb is needed but has not been provided,
   # such as when retrieving the terms list for a document
   class XapianDbNotSet < XapianFuError ; end
@@ -33,26 +33,26 @@ module XapianFu #:nodoc:
   # documents to the database.  You usually don't need to instantiate
   # them yourself unless you're doing something a bit advanced.
   class XapianDoc
-    
+
     # A hash of the fields given to this object on initialize
     attr_reader :fields
-    
+
     # An abitrary blob of data stored alongside the document in the
     # Xapian database.
     attr_reader :data
-    
+
     # The search score of this document when returned as part of a
     # search result
     attr_reader :weight
-    
+
     # The Xapian::Match object for this document when returned as part
     # of a search result.
     attr_reader :match
-    
+
     # The unsigned integer "primary key" for this document in the
     # Xapian database.
     attr_accessor :id
-    
+
     # The XapianDb object that this document was retrieved from, or
     # should be stored in.
     attr_accessor :db
@@ -66,7 +66,7 @@ module XapianFu #:nodoc:
     # and term enumeration.
     def initialize(doc, options = {})
       @options = options
-      
+
       @fields = {}
       if doc.is_a? Xapian::Match
         match = doc
@@ -107,10 +107,10 @@ module XapianFu #:nodoc:
     def values
       @value_accessor ||= XapianDocValueAccessor.new(self)
     end
-    
+
     # Return a list of terms that the db has for this document.
     def terms
-      raise XapianFu::XapianDbNotSet unless db      
+      raise XapianFu::XapianDbNotSet unless db
       db.ro.termlist(id) if db.respond_to?(:ro) and db.ro and id
     end
 
@@ -123,7 +123,7 @@ module XapianFu #:nodoc:
       xapian_document.clear_values
       add_values_to_xapian_document
       # Clear and add terms
-      xapian_document.clear_terms      
+      xapian_document.clear_terms
       generate_terms
       xapian_document
     end
@@ -135,7 +135,7 @@ module XapianFu #:nodoc:
     def xapian_document
       @xapian_document ||= Xapian::Document.new
     end
-    
+
     # Compare IDs with another XapianDoc
     def ==(b)
       if b.is_a?(XapianDoc)
@@ -144,7 +144,7 @@ module XapianFu #:nodoc:
         super(b)
       end
     end
-    
+
     def inspect
       s = ["<#{self.class.to_s} id=#{id}"]
       s << "weight=%.5f" % weight if weight
@@ -167,7 +167,7 @@ module XapianFu #:nodoc:
     def update
       db.rw.replace_document(id, to_xapian_document)
     end
-    
+
     # Set the stemmer to use for this document.  Accepts any string
     # that the Xapian::Stem class accepts (Either the English name for
     # the language or the two letter ISO639 code). Can also be an
@@ -183,7 +183,7 @@ module XapianFu #:nodoc:
       if @stemmer
         @stemmer
       else
-        @stemmer = 
+        @stemmer =
           if ! @options[:stemmer].nil?
             @options[:stemmer]
           elsif @options[:language]
@@ -196,7 +196,7 @@ module XapianFu #:nodoc:
         @stemmer = StemFactory.stemmer_for(@stemmer)
       end
     end
-    
+
     # Return the stopper for this document.  If not set on initialize
     # by the :stopper or :language option, it will try the database's
     # stopper and otherwise default to an English stopper..
@@ -218,7 +218,7 @@ module XapianFu #:nodoc:
       end
     end
 
-    # Return this document's language which is set on initialize, inherited 
+    # Return this document's language which is set on initialize, inherited
     # from the database or defaults to :english
     def language
       if @language
@@ -234,14 +234,14 @@ module XapianFu #:nodoc:
           end
       end
     end
-    
+
     private
-    
+
     # Array of field names not to run through the TermGenerator
     def unindexed_fields
       db ? db.unindexed_fields : []
     end
-    
+
     # Add all the fields to be stored as XapianDb values
     def add_values_to_xapian_document
       db.store_values.collect do |key|
@@ -271,12 +271,19 @@ module XapianFu #:nodoc:
         # add value without field name
         tg.send(index_method, v)
       end
+
+      db.boolean_fields.each do |name|
+        Array(fields[name]).each do |value|
+          xapian_document.add_boolean_term("X#{name.to_s.upcase}#{value.to_s.downcase}")
+        end
+      end
+
       xapian_document
     end
-    
+
   end
-  
-  
+
+
   class StemFactory
     # Return a Xapian::Stem object for the given option. Accepts any
     # string that the Xapian::Stem class accepts (Either the English
@@ -296,5 +303,5 @@ module XapianFu #:nodoc:
       end
     end
   end
-  
+
 end

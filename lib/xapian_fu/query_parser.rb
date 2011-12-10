@@ -93,9 +93,15 @@ module XapianFu #:nodoc:
         qp.stemmer = database.stemmer if database
         qp.default_op = xapian_default_op
         qp.stemming_strategy = xapian_stemming_strategy
+
         fields.each do |name, type|
+          next if database && database.boolean_fields.include?(name)
           qp.add_prefix(name.to_s.downcase, "X" + name.to_s.upcase)
         end
+
+        database.boolean_fields.each do |name|
+          qp.add_boolean_prefix(name.to_s.downcase, "X#{name.to_s.upcase}")
+        end if database
 
         database.sortable_fields.each do |field, opts|
           prefix, string = nil
