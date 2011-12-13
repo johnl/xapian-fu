@@ -100,7 +100,7 @@ module XapianFu #:nodoc:
   #
   class XapianDb # :nonew:
     # Path to the on-disk database. Nil if in-memory database
-    attr_reader :dir 
+    attr_reader :dir
     attr_reader :db_flag #:nodoc:
     # An array of the fields that will be stored in the Xapian
     attr_reader :store_values
@@ -130,7 +130,7 @@ module XapianFu #:nodoc:
       setup_fields(@options[:fields])
       @store_values << @options[:store]
       @store_values << @options[:sortable]
-      @store_values << @options[:collapsible]      
+      @store_values << @options[:collapsible]
       @store_values = @store_values.flatten.uniq.compact
       @spelling = @options[:spelling]
     end
@@ -195,10 +195,10 @@ module XapianFu #:nodoc:
     #
     # The <tt>:page</tt> option sets which page of results to return.
     # Defaults to 1.
-    # 
+    #
     # The <tt>:order</tt> option specifies the stored field to order
     # the results by (instead of the default search result weight).
-    # 
+    #
     # The <tt>:reverse</tt> option reverses the order of the results,
     # so lowest search weight first (or lowest stored field value
     # first).
@@ -215,7 +215,7 @@ module XapianFu #:nodoc:
     #
     # For additional options on how the query is parsed, see
     # XapianFu::QueryParser
-    
+
     def search(q, options = {})
       defaults = { :page => 1, :reverse => false,
         :boolean => true, :boolean_anycase => true, :wildcards => true,
@@ -228,6 +228,7 @@ module XapianFu #:nodoc:
       offset = page * per_page
       qp = XapianFu::QueryParser.new({ :database => self }.merge(options))
       query = qp.parse_query(q.to_s)
+      query = filter_query(query, options[:filter]) if options[:filter]
       enquiry = Xapian::Enquire.new(ro)
       setup_ordering(enquiry, options[:order], options[:reverse])
       if options[:collapse]
@@ -340,8 +341,39 @@ module XapianFu #:nodoc:
       end
       @fields
     end
-    
+
+    def filter_query(query, filter)
+      subqueries = filter.map do |field, values|
+        values = Array(values)
+
+        if sortable_fields[field]
+          sortable_filter_query(field, values)
+        end
+      end
+
+      combined_subqueries = Xapian::Query.new(Xapian::Query::OP_AND, subqueries)
+
+      Xapian::Query.new(Xapian::Query::OP_FILTER, query, combined_subqueries)
+    end
+
+    def sortable_filter_query(field, values)
+      subqueries = values.map do |value|
+        from, to = value.split("..")
+        slot = XapianDocValueAccessor.value_key(field)
+
+        if from.empty?
+          Xapian::Query.new(Xapian::Query::OP_VALUE_LE, slot, Xapian.sortable_serialise(to.to_f))
+        elsif to.nil?
+          Xapian::Query.new(Xapian::Query::OP_VALUE_GE, slot, Xapian.sortable_serialise(from.to_f))
+        else
+          Xapian::Query.new(Xapian::Query::OP_VALUE_RANGE, slot, Xapian.sortable_serialise(from.to_f), Xapian.sortable_serialise(to.to_f))
+        end
+      end
+
+      Xapian::Query.new(Xapian::Query::OP_OR, subqueries)
+    end
+
   end
-  
+
 end
 

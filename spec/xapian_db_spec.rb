@@ -396,6 +396,44 @@ describe XapianDb do
     end
   end
 
+  describe "filtering" do
+    before do
+      @xdb = XapianDb.new(
+        :dir => tmp_dir, :create => true, :overwrite => true,
+        :fields => {
+          :name      => { :index => true },
+          :age       => { :type => Integer, :sortable => true },
+          :height    => { :type => Float, :sortable => true }
+        }
+      )
+    end
+
+    it "should filter results using value ranges" do
+      @xdb << {:name => "John",   :age => 30, :height => 1.8}
+      @xdb << {:name => "John",   :age => 35, :height => 1.9}
+      @xdb << {:name => "John",   :age => 40, :height => 1.7}
+      @xdb << {:name => "Markus", :age => 35, :height => 1.7}
+      @xdb.flush
+
+      # One way of making sure we'll combining queries (and not,
+      # for instance, interpolating filters within the given query
+      # string) is by checking the spelling suggestion provided by
+      # the QueryParser.
+      @xdb.search("jon").corrected_query.should == "john"
+
+      @xdb.search("john", :filter => {:age => "10..20"}).should be_empty
+
+      @xdb.search("john", :filter => {:age => "10..30"}).map(&:id).should == [1]
+      @xdb.search("john", :filter => {:age => "35.."}).map(&:id).should == [2, 3]
+      @xdb.search("john", :filter => {:age => "..35"}).map(&:id).should == [1, 2]
+      @xdb.search("john", :filter => {:age => ["..30", "40.."]}).map(&:id).should == [1, 3]
+
+      @xdb.search("john", :filter => {:age => "10..30", :height => "1.8"}).map(&:id).should == [1]
+      @xdb.search("john", :filter => {:age => "10..30", :height => "..1.8"}).map(&:id).should == [1]
+      @xdb.search("john", :filter => {:age => "10..30", :height => "1.9.."}).should be_empty
+    end
+  end
+
   describe "add_doc" do
     it "should return a XapianDoc with an id" do
       xdb = XapianDb.new
