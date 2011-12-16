@@ -419,7 +419,7 @@ describe XapianDb do
       # for instance, interpolating filters within the given query
       # string) is by checking the spelling suggestion provided by
       # the QueryParser.
-      @xdb.search("jon").corrected_query.should == "john"
+      @xdb.search("jon", :filter => {:age => "10..20"}).corrected_query.should == "john"
 
       @xdb.search("john", :filter => {:age => "10..20"}).should be_empty
 
