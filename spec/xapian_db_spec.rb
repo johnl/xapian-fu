@@ -415,11 +415,9 @@ describe XapianDb do
       @xdb << {:name => "Markus", :age => 35, :height => 1.7}
       @xdb.flush
 
-      # One way of making sure we'll combining queries (and not,
-      # for instance, interpolating filters within the given query
-      # string) is by checking the spelling suggestion provided by
-      # the QueryParser.
-      @xdb.search("jon", :filter => {:age => "10..20"}).corrected_query.should == "john"
+      # Make sure we're combining queries using OP_FILTER by comparing
+      # the weights with and without filtering.
+      @xdb.search("markus")[0].weight.should == @xdb.search("markus", :filter => {:age => "35"})[0].weight
 
       @xdb.search("john", :filter => {:age => "10..20"}).should be_empty
 
