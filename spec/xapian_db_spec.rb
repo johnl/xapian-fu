@@ -218,6 +218,28 @@ describe XapianDb do
 
       xdb.search("foo", :filter => {:colors => [:red]}).map(&:id).should == [1, 2]
       xdb.search("foo", :filter => {:colors => [:black, :green]}).map(&:id).should == [1, 2]
+
+      xdb.search("red").should be_empty
+    end
+
+    it "should index boolean terms if asked to" do
+      xdb = XapianDb.new(:dir => tmp_dir, :create => true,
+                         :fields => {
+                           :name   => { :index => true },
+                           :colors => { :index => true, :boolean => true }
+                         }
+                        )
+
+      xdb << {:name => "Foo", :colors => [:red, :black]}
+      xdb << {:name => "Foo", :colors => [:red, :green]}
+      xdb << {:name => "Foo", :colors => [:blue, :yellow]}
+
+      xdb.flush
+
+      xdb.search("foo", :filter => {:colors => [:red]}).map(&:id).should == [1, 2]
+      xdb.search("foo", :filter => {:colors => [:black, :green]}).map(&:id).should == [1, 2]
+
+      xdb.search("red").map(&:id).should == [1, 2]
     end
 
   end
