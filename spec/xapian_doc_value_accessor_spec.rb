@@ -12,8 +12,14 @@ describe XapianDocValueAccessor do
     end
   end
 
+  before do
+    @xdb = XapianDb.new(:fields => {:name => {:index => true}, :city => {:store => true}})
+    @xdb << {:name => "John"}
+    @xdb.flush
+  end
+
   it "should store and fetch values like a hash" do
-    values = XapianDocValueAccessor.new(XapianDoc.new(nil))
+    values = @xdb.documents.find(1).values
     values.store(:city, "Leeds").should == "Leeds"
     values.fetch(:city).should == "Leeds"
     values[:city] = "London"
@@ -21,7 +27,7 @@ describe XapianDocValueAccessor do
   end
 
   it "should add and retrieve values from the Xapian::Document" do
-    doc = XapianDoc.new(nil)
+    doc = @xdb.documents.find(1)
     values = XapianDocValueAccessor.new(doc)
     lambda { values[:city] = "London" }.should change(doc.xapian_document, :values_count).by(1)
   end
@@ -95,12 +101,13 @@ describe XapianDocValueAccessor do
   end
 
   it "should count the stored values when size is called" do
-    doc = XapianDoc.new(nil)
+    doc = @xdb.documents.find(1)
     lambda { doc.values[:city] = "London" }.should change(doc.values, :size).by(1)
   end
 
   it "should delete values from the Xapian::Document" do
-    doc = XapianDoc.new(nil)
+    doc = @xdb.documents.find(1)
+    values = doc.values
     doc.values[:city] = "Leeds"
     lambda { doc.values.delete(:city) }.should change(doc.values, :size).by(-1)
     doc.values[:city] = "London"

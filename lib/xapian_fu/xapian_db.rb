@@ -236,9 +236,22 @@ module XapianFu #:nodoc:
       if options[:collapse]
         enquiry.collapse_key = XapianDocValueAccessor.value_key(options[:collapse])
       end
+      if options[:facets]
+        spies = options[:facets].inject({}) do |accum, name|
+          accum[name] = spy = Xapian::ValueCountMatchSpy.new(XapianDocValueAccessor.value_key(name))
+          enquiry.add_matchspy(spy)
+          accum
+        end
+      end
       enquiry.query = query
-      ResultSet.new(:mset => enquiry.mset(offset, per_page), :current_page => page + 1,
-                    :per_page => per_page, :corrected_query => qp.corrected_query, :xapian_db => self)
+
+      ResultSet.new(:mset => enquiry.mset(offset, per_page),
+                    :current_page => page + 1,
+                    :per_page => per_page,
+                    :corrected_query => qp.corrected_query,
+                    :spies => spies,
+                    :xapian_db => self
+                   )
     end
 
     # Run the given block in a XapianDB transaction.  Any changes to the
@@ -273,6 +286,22 @@ module XapianFu #:nodoc:
       raise ConcurrencyError if @tx_mutex.locked?
       rw.flush
       ro.reopen
+    end
+
+    def serialize_value(field, value, type = nil)
+      if sortable_fields.include?(field)
+        Xapian.sortable_serialise(value)
+      else
+        (type || fields[field] || Object).to_xapian_fu_storage_value(value)
+      end
+    end
+
+    def unserialize_value(field, value, type = nil)
+      if sortable_fields.include?(field)
+        Xapian.sortable_unserialise(value)
+      else
+        (type || fields[field] || Object).from_xapian_fu_storage_value(value)
+      end
     end
 
     private
