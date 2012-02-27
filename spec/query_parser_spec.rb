@@ -37,6 +37,12 @@ describe QueryParser do
       terms.should_not include "john"
     end
 
+    it "should pass MatchAll and MatchNothing queries through" do
+      qp = QueryParser.new
+      qp.parse_query(Xapian::Query::MatchAll).should == Xapian::Query::MatchAll
+      qp.parse_query(Xapian::Query::MatchNothing).should == Xapian::Query::MatchNothing   
+    end
+
   end
 
 end

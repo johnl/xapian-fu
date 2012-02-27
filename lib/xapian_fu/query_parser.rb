@@ -74,6 +74,7 @@ module XapianFu #:nodoc:
 
     # Parse the given query string and return a Xapian::Query object
     def parse_query(q)
+      return q unless q.is_a? String # if it's a special constant query
       query_parser.parse_query(q, xapian_flags)
     end
 

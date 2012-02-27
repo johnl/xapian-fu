@@ -116,6 +116,8 @@ module XapianFu #:nodoc:
     attr_reader :spelling
     attr_reader :sortable_fields
 
+    SpecialQueries = [Xapian::Query::MatchAll, Xapian::Query::MatchNothing]
+
     def initialize( options = { } )
       @options = { :index_positions => true, :spelling => true }.merge(options)
       @dir = @options[:dir]
@@ -227,7 +229,7 @@ module XapianFu #:nodoc:
       per_page = per_page.to_i rescue 10
       offset = page * per_page
       qp = XapianFu::QueryParser.new({ :database => self }.merge(options))
-      query = qp.parse_query(q.to_s)
+      query = qp.parse_query(SpecialQueries.include?(q) ? q : q.to_s)
       query = filter_query(query, options[:filter]) if options[:filter]
       enquiry = Xapian::Enquire.new(ro)
       setup_ordering(enquiry, options[:order], options[:reverse])
