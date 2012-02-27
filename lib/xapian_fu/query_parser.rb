@@ -72,8 +72,10 @@ module XapianFu #:nodoc:
       self.database = @options[:database]
     end
 
-    # Parse the given query string and return a Xapian::Query object
+    # Parse the given query and return a Xapian::Query object
+    # Accepts either a string or a special query
     def parse_query(q)
+      return q unless q.is_a? String # if it's a special constant query (sanitized by XapianDb.search conversion)
       query_parser.parse_query(q, xapian_flags)
     end
 

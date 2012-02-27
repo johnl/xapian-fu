@@ -116,6 +116,9 @@ module XapianFu #:nodoc:
     attr_reader :spelling
     attr_reader :sortable_fields
 
+    # Special constant queries supported by Xapian; they need special handling
+    SpecialQueries = [Xapian::Query::MatchAll, Xapian::Query::MatchNothing]
+
     def initialize( options = { } )
       @options = { :index_positions => true, :spelling => true }.merge(options)
       @dir = @options[:dir]
@@ -213,6 +216,9 @@ module XapianFu #:nodoc:
     # enabled, spelling suggestions are available using the
     # XapianFu::ResultSet <tt>corrected_query</tt> method.
     #
+    # The first parameter can also be <tt>Xapian::Query::MatchAll</tt> or
+    # <tt>Xapian::Query::MatchNothing</tt>.
+    #
     # For additional options on how the query is parsed, see
     # XapianFu::QueryParser
 
@@ -227,7 +233,7 @@ module XapianFu #:nodoc:
       per_page = per_page.to_i rescue 10
       offset = page * per_page
       qp = XapianFu::QueryParser.new({ :database => self }.merge(options))
-      query = qp.parse_query(q.to_s)
+      query = qp.parse_query(SpecialQueries.include?(q) ? q : q.to_s)
       query = filter_query(query, options[:filter]) if options[:filter]
       enquiry = Xapian::Enquire.new(ro)
       setup_ordering(enquiry, options[:order], options[:reverse])
