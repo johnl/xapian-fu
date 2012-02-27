@@ -116,6 +116,7 @@ module XapianFu #:nodoc:
     attr_reader :spelling
     attr_reader :sortable_fields
 
+    # Special constant queries supported by Xapian; they need special handling
     SpecialQueries = [Xapian::Query::MatchAll, Xapian::Query::MatchNothing]
 
     def initialize( options = { } )
@@ -214,6 +215,9 @@ module XapianFu #:nodoc:
     # the database spelling setting is (true by default).  When
     # enabled, spelling suggestions are available using the
     # XapianFu::ResultSet <tt>corrected_query</tt> method.
+    #
+    # The first parameter can also be <tt>Xapian::Query::MatchAll</tt> or
+    # <tt>Xapian::Query::MatchNothing</tt>.
     #
     # For additional options on how the query is parsed, see
     # XapianFu::QueryParser
