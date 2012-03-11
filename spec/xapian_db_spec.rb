@@ -395,19 +395,19 @@ describe XapianDb do
       xdb.search("jon", :synonyms => true).should_not be_empty
     end
 
-    describe "special queries" do
+    describe "with special queries" do
       before do
         @xdb = XapianDb.new
         @xdb << "Doc 1"
         @xdb << "Doc 2"
       end
 
-      it "should return empty array on MatchNothing" do
-        @xdb.search(Xapian::Query::MatchNothing).should be_empty
+      it "should return empty array on :nothing" do
+        @xdb.search(:nothing).should be_empty
       end
 
-      it "should return all documents on MatchAll" do
-        @xdb.search(Xapian::Query::MatchAll).length.should eq 2
+      it "should return all documents on :all" do
+        @xdb.search(:all).length.should eq 2
       end
     end
   end

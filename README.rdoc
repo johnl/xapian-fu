@@ -123,10 +123,10 @@ Find the document with the highest :year value
 
 == Special queries
 
-XapianFu supports Xapian's `MatchAll` and `Match Nothing` queries. These are constants located in the `Xapian::Query` module
+XapianFu supports Xapian's `MatchAll` and `MatchNothing` queries:
 
-  db.search(Xapian::Query::MatchAll)
-  db.search(Xapian::Query::MatchNothing)
+  db.search(:all)
+  db.search(:nothing)
 
 == Search examples
 
