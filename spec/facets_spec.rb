@@ -23,7 +23,7 @@ describe "Facets support" do
   end
 
   it "should expose facets when searching" do
-    results = @xdb.search("john", facets: [:age, :height])
+    results = @xdb.search("john", {:facets => [:age, :height]})
 
     results.facets[:age].should == [[30, 1], [35, 1], [40, 2]]
     results.facets[:height].should == [[1.7, 2], [1.8, 2]]
