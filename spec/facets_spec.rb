@@ -28,7 +28,7 @@ describe "Facets support" do
     results.facets[:age].should == [[30, 1], [35, 1], [40, 2]]
     results.facets[:height].should == [[1.7, 2], [1.8, 2]]
 
-    results.facets.keys.sort == [:age, :height]
+    results.facets.keys.map(&:to_s).sort == %w(age height)
   end
 
 end
