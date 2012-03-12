@@ -18,6 +18,12 @@ class DateTime #:nodoc:
   end
 end
 
+class Array #:nodoc:
+  def to_xapian_fu_string
+    join(" ")
+  end
+end
+
 module XapianFu #:nodoc:
   require 'xapian_doc_value_accessor'
 
@@ -84,6 +90,9 @@ module XapianFu #:nodoc:
       elsif doc.respond_to?(:has_key?) and doc.respond_to?("[]")
         @fields = doc
         @id = doc[:id] if doc.has_key?(:id)
+      # Handle initialisation from an object with a to_xapian_fu_string method
+      elsif doc.respond_to?(:to_xapian_fu_string)
+        @fields = { :content => doc.to_xapian_fu_string }
       # Handle initialisation from anything else that can be coerced
       # into a string
       elsif doc.respond_to? :to_s

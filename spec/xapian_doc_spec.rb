@@ -37,6 +37,30 @@ describe XapianDoc do
       xdb.ro.positionlist(doc.id, "once").first.should == nil
     end
 
+    it "should tokenize an array given as a field" do
+      xdb = XapianDb.new
+      xdoc = xdb.documents.new(:colors => [:red, :green, :blue]).to_xapian_document
+      xdoc.terms.should be_a_kind_of Array
+      xdoc.terms.last.should be_a_kind_of Xapian::Term
+      terms = xdoc.terms.collect { |t| t.term }
+      terms.should include "red"
+      terms.should include "green"
+      terms.should include "blue"
+      terms.should_not include "redgreenblue"
+    end
+
+    it "should tokenize an array given as the content" do
+      xdb = XapianDb.new
+      xdoc = xdb.documents.new([:red, :green, :blue]).to_xapian_document
+      xdoc.terms.should be_a_kind_of Array
+      xdoc.terms.last.should be_a_kind_of Xapian::Term
+      terms = xdoc.terms.collect { |t| t.term }
+      terms.should include "red"
+      terms.should include "green"
+      terms.should include "blue"
+      terms.should_not include "redgreenblue"
+    end
+
     it "should tokenize a hash" do
       xdb = XapianDb.new
       xdoc = xdb.documents.new(:title => 'once upon a time').to_xapian_document
