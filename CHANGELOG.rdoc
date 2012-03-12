@@ -1,5 +1,8 @@
 === Unreleased
 
+* Support returning all and no documents by using Xapian's special
+  queries `MatchAll` and `MatchNothing`.
+
 * Add boolean terms and faceted queries.
 
   See [http://bit.ly/rMuA4M](http://bit.ly/rMuA4M).
