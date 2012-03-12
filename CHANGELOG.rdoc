@@ -1,5 +1,9 @@
 === Unreleased
 
+* Add boolean terms and faceted queries.
+
+  See [http://bit.ly/rMuA4M](http://bit.ly/rMuA4M).
+
 * Fix number range queries when no prefixes are given.
 
 === 1.3.2 (4th December 2011)

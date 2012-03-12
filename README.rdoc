@@ -105,7 +105,7 @@ type of object is instantiated when returning those stored values.
 And in the case of Fixnum and Bignum, allows you to order search
 results without worrying about leading zeros.
 
-  db = XapianDb.new(:fields => { 
+  db = XapianDb.new(:fields => {
                                  :title => { :store => true },
                                  :released => { :type => Date, :store => true },
                                  :votes => { :type => Fixnum, :store => true }
@@ -160,6 +160,54 @@ And any combinations of the above:
 
   db.search("(ruby OR sinatra) -rails xap*")
 
+== Boolean terms
+
+If you want to implement something like [this](http://getting-started-with-xapian.readthedocs.org/en/latest/howtos/boolean_filters.html#searching),
+then:
+
+  db = XapianDb.new(
+    fields: {
+      name:   {:index => true},
+      colors: {:boolean => true}
+    }
+  )
+
+  db << {name: "Foo", colors: ["red", "black"]}
+  db << {name: "Foo", colors: ["red", "green"]}
+  db << {name: "Foo", colors: ["blue", "yellow"]}
+
+  db.search("foo", filter: {:colors => ["red"]})
+
+The main thing here is that filtering by color doesn't affect the relevancy of the documents returned.
+
+== Facets
+
+Many times you want to allow users to narrow down the search results by restricting the query
+to specific values of a given category. This is called [faceted search](readthedocs.org/docs/getting-started-with-xapian/en/latest/xapian-core-rst/facets.html).
+
+To find out which values you can display to your users, you can do something like this:
+
+  results = db.search("foo", facets: [:colors, :year])
+
+  results.facets
+  # {
+  #   :colors => [
+  #     ["blue",  4]
+  #     ["red",   1]
+  #   ],
+  #
+  #   :year => [
+  #     [2010, 3],
+  #     [2011, 2],
+  #     [2012, 1]
+  #   ]
+  # }
+
+When filtering by one of these values, it's best to define the field as
+boolean (see section above) and then use `:filter`:
+
+  db.search("foo", filter: {colors: ["blue"], year: [2010]})
+
 == ActiveRecord Integration
 
 XapianFu always stores the :id field, so you can easily use it with
@@ -191,7 +239,7 @@ perhaps by reindexing once in a while.
 
   db = XapianDb.new(:dir => 'posts.db')
   deleted_posts = Post.find(:all, :conditions => 'deleted_at is not null')
-  deleted_posts.each do |post| 
+  deleted_posts.each do |post|
     db.documents.delete(post.id)
     post.destroy
   end
