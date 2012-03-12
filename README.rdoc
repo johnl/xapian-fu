@@ -17,6 +17,14 @@ Hash with full text indexing (and ACID transactions).
 
   sudo gem install xapian-fu
 
+=== Xapian Bindings
+
+Xapian Fu requires the Xapian Ruby bindings to be available.  On
+Debian/Ubuntu, you can install the `libxapian-ruby1.8` package to get
+them.  Alternatively, you can install the `xapian-ruby` gem, which
+reportedly will also provide them.  You can also just get the
+upstream Xapian release and manually install it.
+
 == Documentation
 
 XapianFu::XapianDb is the corner-stone of XapianFu.  A XapianDb
@@ -112,6 +120,13 @@ results without worrying about leading zeros.
 Find the document with the highest :year value
 
   db.documents.max(:year)
+
+== Special queries
+
+XapianFu supports Xapian's `MatchAll` and `Match Nothing` queries. These are constants located in the `Xapian::Query` module
+
+  db.search(Xapian::Query::MatchAll)
+  db.search(Xapian::Query::MatchNothing)
 
 == Search examples
 

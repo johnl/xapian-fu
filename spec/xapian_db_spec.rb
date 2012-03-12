@@ -435,6 +435,22 @@ describe XapianDb do
       xdb.search("jon", :synonyms => true).should_not be_empty
     end
 
+    describe "special queries" do
+      before do
+        @xdb = XapianDb.new
+        @xdb << "Doc 1"
+        @xdb << "Doc 2"
+      end
+
+      it "should return empty array on MatchNothing" do
+        @xdb.search(Xapian::Query::MatchNothing).should be_empty
+      end
+
+      it "should return all documents on MatchAll" do
+        @xdb.search(Xapian::Query::MatchAll).length.should eq 2
+      end
+    end
+
     it "should allow to search by boolean terms" do
       xdb = XapianDb.new(:dir => tmp_dir, :create => true,
                          :fields => {
