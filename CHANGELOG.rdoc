@@ -1,4 +1,6 @@
-=== Unreleased
+=== 1.4.0 (13th March 2012)
+
+* Support for indexing Arrays properly
 
 * Support returning all and no documents by using Xapian's special
   queries `MatchAll` and `MatchNothing`.
