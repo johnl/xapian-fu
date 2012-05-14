@@ -160,6 +160,20 @@ And any combinations of the above:
 
   db.search("(ruby OR sinatra) -rails xap*")
 
+== Custom term weights
+
+Sometimes you may want to increase the weight of a particular term in
+a document. Xapian supports adding
+{extra weight}(http://trac.xapian.org/wiki/FAQ/ExtraWeight) to a term
+at index time by providing an integer "wdf" (default is 1).
+
+You may set an optional :weights option when initializing a XapianDb.
+The :weights option accepts a Proc or Lambda that will be called with
+the key, value and list of document fields as each term is indexed.
+Your function should return an integer to set the weight to.
+
+  XapianDb.new(:weights => lambda {|k, v, f| k == :title ? 3 : 1}
+
 == Boolean terms
 
 If you want to implement something like [this](http://getting-started-with-xapian.readthedocs.org/en/latest/howtos/boolean_filters.html#searching),

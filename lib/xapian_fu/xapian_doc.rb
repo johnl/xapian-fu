@@ -275,10 +275,12 @@ module XapianFu #:nodoc:
         else
           v = v.to_s
         end
+        # get the custom term weight if a weights function exists
+        weight = db.weights_function ? db.weights_function.call(k, v, fields).to_i : 1
         # add value with field name
-        tg.send(index_method, v, 1, 'X' + k.to_s.upcase)
+        tg.send(index_method, v, weight, 'X' + k.to_s.upcase)
         # add value without field name
-        tg.send(index_method, v)
+        tg.send(index_method, v, weight)
       end
 
       db.boolean_fields.each do |name|

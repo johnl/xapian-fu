@@ -98,6 +98,26 @@ module XapianFu #:nodoc:
   # and sort them efficiently (without having to resort to storing
   # leading zeros or anything like that).
   #
+  # == Term Weights
+  #
+  # The <tt>:weights</tt> option accepts a Proc or Lambda that sets
+  # custom {term weights}[http://trac.xapian.org/wiki/FAQ/ExtraWeight].
+  #
+  # Your function will receive the term key and value and the full list of
+  # fields, and should return an integer weight to be applied for that term
+  # when the document is indexed.
+  #
+  # In this example,
+  #
+  #   XapianDb.new(:weights => Proc.new do |key, value, fields|
+  #     return 10 if fields.keys.include?('culturally_important')
+  #     return 3  if key == 'title'
+  #     1
+  #   end)
+  #
+  # terms in the title will be weighted three times greater than other terms,
+  # and all terms in 'culturally important' items will weighted 10 times more.
+  #
   class XapianDb # :nonew:
     # Path to the on-disk database. Nil if in-memory database
     attr_reader :dir
@@ -117,6 +137,7 @@ module XapianFu #:nodoc:
     # Whether this db will generate a spelling dictionary during indexing
     attr_reader :spelling
     attr_reader :sortable_fields
+    attr_accessor :weights_function
 
     def initialize( options = { } )
       @options = { :index_positions => true, :spelling => true }.merge(options)
@@ -135,6 +156,7 @@ module XapianFu #:nodoc:
       @store_values << @options[:collapsible]
       @store_values = @store_values.flatten.uniq.compact
       @spelling = @options[:spelling]
+      @weights_function = @options[:weights]
     end
 
     # Return a new stemmer object for this database
