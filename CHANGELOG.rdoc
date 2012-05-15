@@ -1,3 +1,7 @@
+=== Unreleased
+
+* Support for custom term weights when indexing
+
 === 1.4.0 (13th March 2012)
 
 * Support for indexing Arrays properly

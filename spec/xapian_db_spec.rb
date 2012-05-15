@@ -202,6 +202,25 @@ describe XapianDb do
       xdb.size.should == 2
     end
 
+    it "should assign extra weight according to the weights function" do
+      xdb = XapianDb.new(:weights => lambda {|k, v, f| k == :title ? 3 : 1})
+      xdb << { :text => "once upon time", :title => "A story" }
+
+      s = xdb.search("story")
+      terms = s.first.terms
+      terms.select {|t| t.term.match(/story/)}.map(&:wdf).uniq.should == [3]
+      terms.select {|t| t.term.match(/upon/)}.map(&:wdf).uniq.should == [1]
+    end
+
+    it "should use a weight of 1 if no weights function is provided" do
+      xdb = XapianDb.new
+      xdb << { :text => "once upon time", :title => "A story" }
+
+      s = xdb.search("story")
+      terms = s.first.terms
+      terms.map(&:wdf).uniq.should == [1]
+    end
+
     it "should generate boolean terms for multiple values" do
       xdb = XapianDb.new(:dir => tmp_dir, :create => true,
                          :fields => {
