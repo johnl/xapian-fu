@@ -4,7 +4,7 @@ require 'xapian_fu/version'
 Gem::Specification.new do |s|
   s.name    = 'xapian-fu'
   s.version = XapianFu::VERSION
-  s.date    = '2012-03-13'
+  s.date    = '2012-05-23'
   s.rubyforge_project = "xapian-fu"
   
   s.summary = "A Ruby interface to the Xapian search engine"
