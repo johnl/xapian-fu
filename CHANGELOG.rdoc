@@ -1,5 +1,7 @@
 === 1.5.1 (unreleased)
 
+* Add ability to pass a `PostingSource` when searching.
+
 * Add ability to specify how many documents to sample when searching.
 
   This allows for accurate paging links, facet counts, etc.

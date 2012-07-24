@@ -775,4 +775,42 @@ describe XapianDb do
       xdb.search("language").map(&:id).should == [2, 1, 3]
     end
   end
+
+  describe "posting sources" do
+    class BoostLatest < Xapian::PostingSource
+      attr :docid
+
+      def init(db)
+        @db = db
+        @iter = db.postlist("").map(&:docid).each
+        @docid = @iter.next
+      end
+
+      def weight
+        @docid * 10
+      end
+
+      def next(minweight)
+        @docid = @iter.next
+      rescue StopIteration
+        @docid = nil
+      end
+
+      def at_end
+        @docid.nil?
+      end
+    end
+
+    it "allows to pass a custom posting source to boost results" do
+      xdb = XapianDb.new
+
+      xdb << {:id => 1, :name => "Foo"}
+      xdb << {:id => 2, :name => "Foo Bar"}
+      xdb << {:id => 3, :name => "Foo Bar Baz"}
+
+      xdb.search("foo").map(&:id).should == [1, 2, 3]
+
+      xdb.search("foo", :posting_source => BoostLatest.new).map(&:id).should == [3, 2, 1]
+    end
+  end
 end

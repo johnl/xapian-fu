@@ -280,6 +280,11 @@ module XapianFu #:nodoc:
           accum
         end
       end
+
+      if options.include?(:posting_source)
+        query = Xapian::Query.new(Xapian::Query::OP_AND_MAYBE, query, Xapian::Query.new(options[:posting_source]))
+      end
+
       enquiry.query = query
 
       ResultSet.new(:mset => enquiry.mset(offset, per_page, check_at_least),
