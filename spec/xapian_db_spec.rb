@@ -758,5 +758,21 @@ describe XapianDb do
     end
   end
 
-end
+  describe "weights per field" do
+    it "should honor the :weight option when declaring fields" do
+      xdb = XapianDb.new(
+        :fields => {
+          :title       => {:weight => 20},
+          :abstract    => {:weight => 10},
+          :description => {:type => String}
+        }
+      )
 
+      xdb << {:id => 1, :title => "Programming Ruby: The Pragmatic Programmer's Guide", :abstract => "The programming language", :description => "This book is a tutorial and reference for the Ruby programming language."}
+      xdb << {:id => 2, :title => "The Ruby Programming Language", :abstract => "A great book", :description => "The Matz book."}
+      xdb << {:id => 3, :title => "The Rails Way", :abstract => "A good Rails book.", :description => "You have to know the language."}
+
+      xdb.search("language").map(&:id).should == [2, 1, 3]
+    end
+  end
+end

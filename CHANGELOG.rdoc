@@ -1,3 +1,7 @@
+=== 1.5.1 (unreleased)
+
+* Support a `:weight` option when declaring database fields.
+
 === 1.5.0 (23rd May 2012)
 
 * Support for custom term weights when indexing (Mike Ragalie)

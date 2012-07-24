@@ -138,6 +138,7 @@ module XapianFu #:nodoc:
     attr_reader :spelling
     attr_reader :sortable_fields
     attr_accessor :weights_function
+    attr :field_weights
 
     def initialize( options = { } )
       @options = { :index_positions => true, :spelling => true }.merge(options)
@@ -376,6 +377,7 @@ module XapianFu #:nodoc:
       @store_values = []
       @sortable_fields = {}
       @boolean_fields = []
+      @field_weights = Hash.new(1)
       return nil if field_options.nil?
       default_opts = {
         :store => true,
@@ -405,6 +407,7 @@ module XapianFu #:nodoc:
         @unindexed_fields << name if opts[:index] == false
         @boolean_fields << name if opts[:boolean]
         @fields[name] = opts[:type]
+        @field_weights[name] = opts[:weight] if opts.include?(:weight)
       end
       @fields
     end

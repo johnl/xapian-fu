@@ -276,7 +276,7 @@ module XapianFu #:nodoc:
           v = v.to_s
         end
         # get the custom term weight if a weights function exists
-        weight = db.weights_function ? db.weights_function.call(k, v, fields).to_i : 1
+        weight = db.weights_function ? db.weights_function.call(k, v, fields).to_i : db.field_weights[k]
         # add value with field name
         tg.send(index_method, v, weight, 'X' + k.to_s.upcase)
         # add value without field name
