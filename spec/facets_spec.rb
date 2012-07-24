@@ -5,6 +5,8 @@ tmp_dir = '/tmp/xapian_fu_test.db'
 describe "Facets support" do
 
   before do
+    FileUtils.rm_rf(tmp_dir)
+
     @xdb = XapianFu::XapianDb.new(
       :dir => tmp_dir, :create => true, :overwrite => true,
       :fields => {
@@ -31,4 +33,23 @@ describe "Facets support" do
     results.facets.keys.map(&:to_s).sort == %w(age height)
   end
 
+  it "should allow to set the minimum amount of documents to check" do
+    100.times do |i|
+      @xdb << {:name => "John A #{i}", :age => 30, :height => 1.8}
+      @xdb << {:name => "John B #{i}", :age => 35, :height => 1.8}
+      @xdb << {:name => "John C #{i}", :age => 40, :height => 1.7}
+      @xdb << {:name => "John D #{i}", :age => 40, :height => 1.7}
+      @xdb << {:name => "Markus #{i}", :age => 35, :height => 1.7}
+    end
+
+    @xdb.flush
+
+    results = @xdb.search("john", :facets => [:age, :height], :check_at_least => :all)
+
+    results.facets[:age].map(&:last).inject(0) { |t,i| t + i }.should == 404
+
+    results = @xdb.search(:all, :facets => [:age, :height], :check_at_least => :all)
+
+    results.facets[:age].map(&:last).inject(0) { |t,i| t + i }.should == 505
+  end
 end

@@ -238,6 +238,12 @@ module XapianFu #:nodoc:
     # enabled, spelling suggestions are available using the
     # XapianFu::ResultSet <tt>corrected_query</tt> method.
     #
+    # The <tt>:check_at_least</tt> option controls how many documents
+    # will be sampled. This allows for accurate page and facet counts.
+    # Specifying the special value of <tt>:all</tt> will make Xapian
+    # sample every document in the database. Be aware that this can hurt
+    # your query performance.
+    #
     # The first parameter can also be <tt>:all</tt> or
     # <tt>:nothing</tt>, to match all documents or no documents
     # respectively.
@@ -255,6 +261,10 @@ module XapianFu #:nodoc:
       per_page = options[:per_page] || options[:limit] || 10
       per_page = per_page.to_i rescue 10
       offset = page * per_page
+
+      check_at_least = options.include?(:check_at_least) ? options[:check_at_least] : 0
+      check_at_least = self.size if check_at_least == :all
+
       qp = XapianFu::QueryParser.new({ :database => self }.merge(options))
       query = qp.parse_query(q.is_a?(Symbol) ? q : q.to_s)
       query = filter_query(query, options[:filter]) if options[:filter]
@@ -272,7 +282,7 @@ module XapianFu #:nodoc:
       end
       enquiry.query = query
 
-      ResultSet.new(:mset => enquiry.mset(offset, per_page),
+      ResultSet.new(:mset => enquiry.mset(offset, per_page, check_at_least),
                     :current_page => page + 1,
                     :per_page => per_page,
                     :corrected_query => qp.corrected_query,
