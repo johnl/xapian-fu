@@ -40,7 +40,7 @@ module XapianFu
 
     # The estimated total number of pages of results this search could return
     def total_pages
-      (total_entries / per_page.to_f).round
+      (total_entries / per_page.to_f).ceil
     end
 
     # The previous page number, or nil if there are no previous pages available

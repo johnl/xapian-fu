@@ -423,6 +423,8 @@ describe XapianDb do
       results.previous_page.should == 1
       results.next_page.should == nil
       results.offset.should == 16
+      results = xdb.search(content, :page => 1, :per_page => 14)
+      results.total_pages.should == 3
     end
 
     it "should do searches with and without field names" do
