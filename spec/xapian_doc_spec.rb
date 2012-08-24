@@ -6,8 +6,16 @@ require 'fileutils'
 
 describe XapianDoc do
 
-  it "should be equal to other XapianDoc objects with the same id" do
-    XapianDoc.new(:id => 666).should == XapianDoc.new(:id => 666)
+  it "should be equal to other XapianDoc objects with the same id belonging to the same database" do
+    xdb1 = XapianDb.new(:dir => "/tmp/foos")
+    xdb2 = XapianDb.new(:dir => "/tmp/foos")
+
+    XapianDoc.new({:id => 666}, :xapian_db => xdb1).should == XapianDoc.new({:id => 666}, :xapian_db => xdb1)
+    XapianDoc.new({:id => 666}, :xapian_db => xdb1).should == XapianDoc.new({:id => 666}, :xapian_db => xdb2)
+
+    xdb3 = XapianDb.new(:dir => "/tmp/bars")
+
+    XapianDoc.new({:id => 666}, :xapian_db => xdb1).should_not == XapianDoc.new({:id => 666}, :xapian_db => xdb3)
   end
 
   it "should not be equal to other XapianDoc objects with different ids" do

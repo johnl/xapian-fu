@@ -148,7 +148,7 @@ module XapianFu #:nodoc:
     # Compare IDs with another XapianDoc
     def ==(b)
       if b.is_a?(XapianDoc)
-        id == b.id
+        id == b.id && (db == b.db || db.dir == b.db.dir)
       else
         super(b)
       end
