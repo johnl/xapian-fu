@@ -158,6 +158,10 @@ module XapianFu #:nodoc:
       @store_values = @store_values.flatten.uniq.compact
       @spelling = @options[:spelling]
       @weights_function = @options[:weights]
+
+      if @options[:create] || @options[:overwrite]
+        rw.flush
+      end
     end
 
     # Return a new stemmer object for this database

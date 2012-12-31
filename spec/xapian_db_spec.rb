@@ -32,9 +32,8 @@ describe XapianDb do
   end
 
   it "should lazily create the on-disk database when rw is used" do
-    xdb = XapianDb.new(:dir => tmp_dir, :create => true)
     File.exists?(tmp_dir).should be_false
-    xdb.rw
+    xdb = XapianDb.new(:dir => tmp_dir, :create => true)
     File.exists?(tmp_dir).should be_true
   end
 
