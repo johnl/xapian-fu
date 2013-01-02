@@ -16,12 +16,13 @@ describe "Facets support" do
       }
     )
 
-    @xdb << {:name => "John A",   :age => 30, :height => 1.8}
-    @xdb << {:name => "John B",   :age => 35, :height => 1.8}
-    @xdb << {:name => "John C",   :age => 40, :height => 1.7}
-    @xdb << {:name => "John D",   :age => 40, :height => 1.7}
-    @xdb << {:name => "Markus",   :age => 35, :height => 1.7}
-    @xdb.flush
+    @xdb.write do
+      @xdb << {:name => "John A",   :age => 30, :height => 1.8}
+      @xdb << {:name => "John B",   :age => 35, :height => 1.8}
+      @xdb << {:name => "John C",   :age => 40, :height => 1.7}
+      @xdb << {:name => "John D",   :age => 40, :height => 1.7}
+      @xdb << {:name => "Markus",   :age => 35, :height => 1.7}
+    end
   end
 
   it "should expose facets when searching" do
@@ -34,15 +35,15 @@ describe "Facets support" do
   end
 
   it "should allow to set the minimum amount of documents to check" do
-    100.times do |i|
-      @xdb << {:name => "John A #{i}", :age => 30, :height => 1.8}
-      @xdb << {:name => "John B #{i}", :age => 35, :height => 1.8}
-      @xdb << {:name => "John C #{i}", :age => 40, :height => 1.7}
-      @xdb << {:name => "John D #{i}", :age => 40, :height => 1.7}
-      @xdb << {:name => "Markus #{i}", :age => 35, :height => 1.7}
+    @xdb.write do
+      100.times do |i|
+        @xdb << {:name => "John A #{i}", :age => 30, :height => 1.8}
+        @xdb << {:name => "John B #{i}", :age => 35, :height => 1.8}
+        @xdb << {:name => "John C #{i}", :age => 40, :height => 1.7}
+        @xdb << {:name => "John D #{i}", :age => 40, :height => 1.7}
+        @xdb << {:name => "Markus #{i}", :age => 35, :height => 1.7}
+      end
     end
-
-    @xdb.flush
 
     results = @xdb.search("john", :facets => [:age, :height], :check_at_least => :all)
 
