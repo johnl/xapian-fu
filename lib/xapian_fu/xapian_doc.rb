@@ -169,12 +169,16 @@ module XapianFu #:nodoc:
 
     # Add this document to the Xapian Database
     def create
-      self.id = db.rw.add_document(to_xapian_document)
+      db.write do |rw|
+        self.id = rw.add_document(to_xapian_document)
+      end
     end
 
     # Update this document in the Xapian Database
     def update
-      db.rw.replace_document(id, to_xapian_document)
+      db.write do |rw|
+        rw.replace_document(id, to_xapian_document)
+      end
     end
 
     # Set the stemmer to use for this document.  Accepts any string
@@ -261,35 +265,37 @@ module XapianFu #:nodoc:
 
     # Run the Xapian term generator against this documents text
     def generate_terms
-      tg = Xapian::TermGenerator.new
-      tg.database = db.rw
-      tg.document = xapian_document
-      tg.stopper = stopper if stopper
-      tg.stemmer = stemmer
-      tg.set_flags Xapian::TermGenerator::FLAG_SPELLING if db.spelling
-      index_method = db.index_positions ? :index_text : :index_text_without_positions
-      fields.each do |k,v|
-        next if unindexed_fields.include?(k)
-        if v.respond_to?(:to_xapian_fu_string)
-          v = v.to_xapian_fu_string
-        else
-          v = v.to_s
+      db.write do |rw|
+        tg = Xapian::TermGenerator.new
+        tg.database = rw
+        tg.document = xapian_document
+        tg.stopper = stopper if stopper
+        tg.stemmer = stemmer
+        tg.set_flags Xapian::TermGenerator::FLAG_SPELLING if db.spelling
+        index_method = db.index_positions ? :index_text : :index_text_without_positions
+        fields.each do |k,v|
+          next if unindexed_fields.include?(k)
+          if v.respond_to?(:to_xapian_fu_string)
+            v = v.to_xapian_fu_string
+          else
+            v = v.to_s
+          end
+          # get the custom term weight if a weights function exists
+          weight = db.weights_function ? db.weights_function.call(k, v, fields).to_i : db.field_weights[k]
+          # add value with field name
+          tg.send(index_method, v, weight, 'X' + k.to_s.upcase)
+          # add value without field name
+          tg.send(index_method, v, weight)
         end
-        # get the custom term weight if a weights function exists
-        weight = db.weights_function ? db.weights_function.call(k, v, fields).to_i : db.field_weights[k]
-        # add value with field name
-        tg.send(index_method, v, weight, 'X' + k.to_s.upcase)
-        # add value without field name
-        tg.send(index_method, v, weight)
-      end
 
-      db.boolean_fields.each do |name|
-        Array(fields[name]).each do |value|
-          xapian_document.add_boolean_term("X#{name.to_s.upcase}#{value.to_s.downcase}")
+        db.boolean_fields.each do |name|
+          Array(fields[name]).each do |value|
+            xapian_document.add_boolean_term("X#{name.to_s.upcase}#{value.to_s.downcase}")
+          end
         end
-      end
 
-      xapian_document
+        xapian_document
+      end
     end
 
   end

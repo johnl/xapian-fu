@@ -56,7 +56,7 @@ module XapianFu
     # document id, or nil if it doesn't exist
     def delete(doc)
       if doc.respond_to?(:to_i)
-        @xdb.rw.delete_document(doc.to_i)
+        @xdb.write { |rw| rw.delete_document(doc.to_i) }
         doc.to_i
       end
     rescue RuntimeError => e

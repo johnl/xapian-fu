@@ -16,19 +16,15 @@ describe XapianDb do
     it "should make an in-memory database by default" do
       xdb = XapianDb.new
       xdb.ro.should be_a_kind_of(Xapian::Database)
-      xdb.rw.should === xdb.ro
     end
 
     it "should make an on-disk database when given a :dir option" do
       xdb = XapianDb.new(:dir => tmp_dir, :create => true)
-      xdb.rw
       File.exists?(tmp_dir).should be_true
       xdb.should respond_to(:dir)
       xdb.dir.should == tmp_dir
-      xdb.rw.should be_a_kind_of(Xapian::WritableDatabase)
       xdb.ro.should be_a_kind_of(Xapian::Database)
     end
-
   end
 
   it "should lazily create the on-disk database when rw is used" do
@@ -39,12 +35,32 @@ describe XapianDb do
 
   it "should flush documents to the index when flush is called" do
     xdb = XapianDb.new(:dir => tmp_dir, :create => true)
-    xdb.flush
     xdb.size.should == 0
-    xdb << "Once upon a time"
-    xdb.size.should == 0
-    xdb.flush
-    xdb.size.should == 1
+
+    xdb.write do |rw|
+      xdb << "Once upon a time"
+      xdb.size.should == 0
+      xdb.flush
+      xdb.size.should == 1
+    end
+  end
+
+  it "overwrites existing databases if told to do so" do
+    xdb = XapianDb.new(:dir => tmp_dir, :create => true)
+
+    xdb << {:name => "John"}
+
+    xdb.search("john").size.should == 1
+
+    xdb = XapianDb.new(:dir => tmp_dir, :overwrite => true)
+
+    xdb.search("john").size.should == 0
+
+    xdb << {:name => "John"}
+    xdb << {:name => "Mary"}
+
+    xdb.search("john").size.should == 1
+    xdb.search("mary").size.should == 1
   end
 
   it "should return a nice string when inspect is called" do
@@ -59,7 +75,6 @@ describe XapianDb do
         xdb << "Once upon a time"
         xdb.size.should == 1
       end
-      xdb.flush
       xdb.size.should == 2
     end
 
@@ -79,7 +94,6 @@ describe XapianDb do
         xdb << "Once upon a time"
       end
       thread.join
-      xdb.flush
       xdb.size.should == 4
     end
 
@@ -93,7 +107,6 @@ describe XapianDb do
         end
       rescue StandardError
       end
-      xdb.flush
       xdb.size.should == 1
     end
   end
@@ -110,21 +123,18 @@ describe XapianDb do
     it "should raise a XapianFu::DocNotFound error on find if the document doesn't exist" do
       xdb = XapianDb.new
       xdb << "once upon a time"
-      xdb.flush
       lambda { xdb.documents.find(10) }.should raise_error XapianFu::DocNotFound
     end
 
     it "should retrieve documents with the find method" do
       xdb = XapianDb.new
       xdb << "Once upon a time"
-      xdb.flush
       xdb.documents.find(1).should be_a_kind_of(XapianDoc)
     end
 
     it "should retrieve documents like an array and return a XapianDoc" do
       xdb = XapianDb.new
       xdb << "once upon a time"
-      xdb.flush
       xdb.documents[1].should be_a_kind_of(XapianDoc)
     end
 
@@ -143,17 +153,14 @@ describe XapianDb do
     it "should delete docs by id" do
       xdb = XapianDb.new
       doc = xdb << XapianDoc.new("Once upon a time")
-      xdb.flush
       xdb.size.should == 1
       xdb.documents.delete(doc.id).should == 1
-      xdb.flush
       xdb.size.should == 0
     end
 
     it "should handle being asked to delete docs that don't exist in the db" do
       xdb = XapianDb.new
       doc = xdb << XapianDoc.new("Once upon a time")
-      xdb.flush
       xdb.documents.delete(100000).should == nil
     end
 
@@ -163,7 +170,6 @@ describe XapianDb do
         xdb << { :id => 20 }
         xdb << { :id => 9 }
         xdb << { :id => 15 }
-        xdb.flush
         xdb.documents.max.id.should == 20
       end
 
@@ -172,7 +178,6 @@ describe XapianDb do
         xdb << { :id => 8, :number => "200" }
         xdb << { :id => 9, :number => "300" }
         xdb << { :id => 15, :number => "100"  }
-        xdb.flush
         xdb.documents.max(:number).id.should == 9
       end
     end
@@ -182,14 +187,12 @@ describe XapianDb do
     it "should index a XapianDoc" do
       xdb = XapianDb.new
       xdb << XapianDoc.new({ :text => "once upon a time", :title => "A story" })
-      xdb.flush
       xdb.size.should == 1
     end
 
     it "should index a Hash" do
       xdb = XapianDb.new
       xdb << { :text => "once upon a time", :title => "A story" }
-      xdb.flush
       xdb.size.should == 1
     end
 
@@ -232,8 +235,6 @@ describe XapianDb do
       xdb << {:name => "Foo", :colors => [:red, :green]}
       xdb << {:name => "Foo", :colors => [:blue, :yellow]}
 
-      xdb.flush
-
       xdb.search("foo", :filter => {:colors => [:red]}).map(&:id).should == [1, 2]
       xdb.search("foo", :filter => {:colors => [:black, :green]}).map(&:id).should == [1, 2]
 
@@ -251,8 +252,6 @@ describe XapianDb do
       xdb << {:name => "Foo", :colors => [:red, :black]}
       xdb << {:name => "Foo", :colors => [:red, :green]}
       xdb << {:name => "Foo", :colors => [:blue, :yellow]}
-
-      xdb.flush
 
       xdb.search("foo", :filter => {:colors => [:red]}).map(&:id).should == [1, 2]
       xdb.search("foo", :filter => {:colors => [:black, :green]}).map(&:id).should == [1, 2]
@@ -336,7 +335,6 @@ describe XapianDb do
       xdb = XapianDb.new(:dir => tmp_dir + 'corrected_spelling', :create => true,
                          :overwrite => true)
       xdb << "there is a mouse in this building"
-      xdb.flush
       results = xdb.search("there was a moose at our building")
       results.corrected_query.should == "there was a mouse at our building"
     end
@@ -345,7 +343,6 @@ describe XapianDb do
       xdb = XapianDb.new(:dir => tmp_dir + 'no_corrected_spelling', :create => true,
                          :overwrite => true, :spelling => false)
       xdb << "there is a mouse in this house"
-      xdb.flush
       results = xdb.search("there was a moose at our house")
       results.corrected_query.should == ""
     end
@@ -440,16 +437,13 @@ describe XapianDb do
     end
 
     it "should recognize synonyms" do
-      xdb = XapianDb.new(:dir => tmp_dir + 'synonyms', :create => true,
-                         :fields => [:name], :overwrite => true)
+      xdb = XapianDb.new(:dir => tmp_dir + 'synonyms', :overwrite => true, :fields => [:name])
 
       xdb << {:name => "john"}
-      xdb.flush
 
       xdb.search("jon", :synonyms => true).should be_empty
 
       xdb.add_synonym("jon", "john")
-      xdb.flush
 
       xdb.search("jon").should be_empty
       xdb.search("jon", :synonyms => true).should_not be_empty
@@ -484,8 +478,6 @@ describe XapianDb do
       xdb << {:name => "John B", :age => 11, :city => "Liverpool"}
       xdb << {:name => "John C", :age => 12, :city => "Liverpool"}
 
-      xdb.flush
-
       xdb.search("john").size.should == 3
       xdb.search("john", :filter => {:age => 10}).map(&:id).should == [1]
       xdb.search("john", :filter => {:age => [10, 12]}).map(&:id).should == [1, 3]
@@ -502,7 +494,7 @@ describe XapianDb do
   describe "filtering" do
     before do
       @xdb = XapianDb.new(
-        :dir => tmp_dir, :create => true, :overwrite => true,
+        :dir => tmp_dir, :create => true,
         :fields => {
           :name      => { :index => true },
           :age       => { :type => Integer, :sortable => true },
@@ -516,7 +508,6 @@ describe XapianDb do
       @xdb << {:name => "John",   :age => 35, :height => 1.9}
       @xdb << {:name => "John",   :age => 40, :height => 1.7}
       @xdb << {:name => "Markus", :age => 35, :height => 1.7}
-      @xdb.flush
 
       # Make sure we're combining queries using OP_FILTER by comparing
       # the weights with and without filtering.
@@ -564,7 +555,6 @@ describe XapianDb do
     it "should store no fields by default" do
       xdb = XapianDb.new
       xdb << XapianDoc.new(:title => "Once upon a time")
-      xdb.flush
       xdb.documents.find(1).values[:title].should be_empty
     end
 
@@ -635,6 +625,64 @@ describe XapianDb do
       xdb.size.should == 1
       doc = xdb.documents[1]
       Marshal::load(doc.data).should == { :thing => 0xdeadbeef }
+    end
+  end
+
+  describe "writing" do
+    before(:each) do
+      @xdb = XapianDb.new(:dir => tmp_dir, :create => true)
+    end
+
+    it "makes results immediately available" do
+      @xdb.write do
+        @xdb << {:title => "foo"}
+      end
+
+      @xdb.search("foo").map { |o| o.id }.should == [1]
+    end
+
+    it "closes the writable database to avoid locking issues" do
+      @xdb.write do
+        @xdb << {:title => "foo bar"}
+      end
+
+      @xdb2 = XapianDb.new(:dir => tmp_dir, :create => true)
+
+      @xdb2.write do
+        @xdb2 << {:title => "foo baz"}
+      end
+
+      @xdb2.search("foo").map { |o| o.id }.should == [1, 2]
+    end
+
+    it "handles concurrency" do
+      threads = Array.new(2) do
+        Thread.new do
+          20.times do
+            @xdb.write do
+              @xdb << {:title => "foo"}
+            end
+          end
+        end
+      end
+
+      threads.each { |t| t.join }
+
+      @xdb.size.should == 40
+    end
+
+    it "supports nesting" do
+      @xdb.write do
+        @xdb << {:title => "foo bar"}
+
+        @xdb.write do
+          @xdb << {:title => "foo baz"}
+        end
+
+        @xdb << {:title => "foo qux"}
+      end
+
+      @xdb.search("foo").map { |o| o.id }.should == [1, 2, 3]
     end
   end
 

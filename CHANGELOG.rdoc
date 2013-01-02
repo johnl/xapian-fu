@@ -1,3 +1,23 @@
+=== ? (unreleased)
+
+* Make writing to the database concurrency-friendly.
+
+  In the past, it was easy to leave the writable database open, thus
+  locking write access to any other writer.
+
+  By removing the ability to access the pointer to the writable database
+  we are making the writing process more robust.
+
+* If specified in options, databases will be created or overwritten when
+  initializing the `XapianDb` object.
+
+  This is necessary because we now instantiate `WritableDatabase` as needed,
+  so overwriting would happen on each write.
+
+  But it also makes everything more expectable. In the past, you could
+  be reading old data right after you initialized a new `XapianDb`
+  object, until you performed a write.
+
 === 1.5.1 (unreleased)
 
 * Add ability to pass a `PostingSource` when searching.

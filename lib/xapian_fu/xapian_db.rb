@@ -9,6 +9,7 @@ module XapianFu #:nodoc:
   require 'result_set'
   require 'xapian_documents_accessor'
   require 'thread'
+  require 'monitor'
 
   # Raised when two operations are attempted concurrently when it is
   # not possible
@@ -121,7 +122,6 @@ module XapianFu #:nodoc:
   class XapianDb # :nonew:
     # Path to the on-disk database. Nil if in-memory database
     attr_reader :dir
-    attr_reader :db_flag #:nodoc:
     # An array of the fields that will be stored in the Xapian
     attr_reader :store_values
     # True if term positions will be stored
@@ -144,10 +144,8 @@ module XapianFu #:nodoc:
       @options = { :index_positions => true, :spelling => true }.merge(options)
       @dir = @options[:dir]
       @index_positions = @options[:index_positions]
-      @db_flag = Xapian::DB_OPEN
-      @db_flag = Xapian::DB_CREATE_OR_OPEN if @options[:create]
-      @db_flag = Xapian::DB_CREATE_OR_OVERWRITE if @options[:overwrite]
       @tx_mutex = Mutex.new
+      @rw_mutex = Monitor.new
       @language = @options.fetch(:language, :english)
       @stemmer = @options.fetch(:stemmer, @language)
       @stopper = @options.fetch(:stopper, @language)
@@ -160,7 +158,11 @@ module XapianFu #:nodoc:
       @weights_function = @options[:weights]
 
       if @options[:create] || @options[:overwrite]
-        rw.flush
+        flag = @options[:create] ? Xapian::DB_CREATE_OR_OPEN : Xapian::DB_CREATE_OR_OVERWRITE
+
+        db = Xapian::WritableDatabase.new(dir, flag)
+        db.flush
+        db.close
       end
     end
 
@@ -172,11 +174,6 @@ module XapianFu #:nodoc:
     # The stopper object for this database
     def stopper
       StopperFactory.stopper_for(@stopper)
-    end
-
-    # The writable Xapian::WritableDatabase
-    def rw
-      @rw ||= setup_rw_db
     end
 
     # The read-only Xapian::Database
@@ -210,7 +207,7 @@ module XapianFu #:nodoc:
     # Note that in-memory databases don't support synonyms.
     #
     def add_synonym(term, synonym)
-      rw.add_synonym(term, synonym)
+      write { |rw| rw.add_synonym(term, synonym) }
     end
 
     # Conduct a search on the Xapian database, returning an array of
@@ -313,24 +310,45 @@ module XapianFu #:nodoc:
     #
     def transaction(flush_on_commit = true)
       @tx_mutex.synchronize do
-        begin
-          rw.begin_transaction(flush_on_commit)
-          yield
-        rescue Exception => e
-          rw.cancel_transaction
-          ro.reopen
-          raise e
+        write do |rw|
+          begin
+            rw.begin_transaction(flush_on_commit)
+            yield(rw)
+            rw.commit_transaction
+          rescue Exception => e
+            rw.cancel_transaction
+            raise e
+          end
         end
-        rw.commit_transaction
-        ro.reopen
+      end
+    end
+
+    # Provides write access to the database for the duration of the
+    # given block.
+    def write
+      @rw_mutex.synchronize do
+        if @rw
+          yield(@rw)
+        else
+          begin
+            @rw = setup_rw_db
+            yield(@rw)
+          ensure
+            if dir
+              @rw.close
+              ro.reopen
+            end
+
+            @rw = nil
+          end
+        end
       end
     end
 
     # Flush any changes to disk and reopen the read-only database.
-    # Raises ConcurrencyError if a transaction is in process
+    # Only useful if you need to manually flush during a +write+ block.
     def flush
-      raise ConcurrencyError if @tx_mutex.locked?
-      rw.flush
+      @rw.flush if @rw
       ro.reopen
     end
 
@@ -355,23 +373,21 @@ module XapianFu #:nodoc:
     # Setup the writable database
     def setup_rw_db
       if dir
-        @rw = Xapian::WritableDatabase.new(dir, db_flag)
-        @rw.flush if @options[:create]
-        @rw
+        Xapian::WritableDatabase.new(dir, Xapian::DB_OPEN)
       else
         # In memory database
         @spelling = false # inmemory doesn't support spelling
-        @rw = Xapian::inmemory_open
+        ro
       end
     end
 
     # Setup the read-only database
     def setup_ro_db
       if dir
-        @ro = Xapian::Database.new(dir)
+        Xapian::Database.new(dir)
       else
         # In memory db
-        @ro = rw
+        Xapian.inmemory_open
       end
     end
 
