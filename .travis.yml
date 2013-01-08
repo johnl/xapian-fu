@@ -7,8 +7,11 @@ branches:
 rvm:
   - 1.8.7
   - 1.9.3
-  - jruby-18mode
-  - jruby-19mode
 
 gemfile:
   - .travis/Gemfile
+
+before_install:
+ - sudo apt-get update -qq
+ - sudo apt-get install -qq libxapian22 libxapian-dev
+ - curl https://gist.github.com/raw/4486398/31a002b6c9eef194ad7d2d55317e8a14d7ca2ad6/install.sh | sh -
