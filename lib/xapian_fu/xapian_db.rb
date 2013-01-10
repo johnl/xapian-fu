@@ -160,9 +160,13 @@ module XapianFu #:nodoc:
       if @options[:create] || @options[:overwrite]
         flag = @options[:create] ? Xapian::DB_CREATE_OR_OPEN : Xapian::DB_CREATE_OR_OVERWRITE
 
-        db = Xapian::WritableDatabase.new(dir, flag)
-        db.flush
-        db.close
+        begin
+          db = Xapian::WritableDatabase.new(dir, flag)
+          db.flush
+          db.close
+        rescue IOError => e
+          raise e unless e.message["DatabaseLockError"]
+        end
       end
     end
 

@@ -33,6 +33,15 @@ describe XapianDb do
     File.exists?(tmp_dir).should be_true
   end
 
+  it "should not raise errors if the database is already created and being used" do
+    xdb = XapianDb.new(:dir => tmp_dir, :create => true)
+
+    # Simulate a race condition.
+    xdb.write do
+      XapianDb.new(:dir => tmp_dir, :create => true)
+    end
+  end
+
   it "should flush documents to the index when flush is called" do
     xdb = XapianDb.new(:dir => tmp_dir, :create => true)
     xdb.size.should == 0
