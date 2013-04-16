@@ -97,8 +97,8 @@ module XapianFu #:nodoc:
       else
         qp = Xapian::QueryParser.new
         qp.database = xapian_database if xapian_database
-        qp.stopper = database.stopper if database
-        qp.stemmer = database.stemmer if database
+        qp.stopper = database.stopper if database && database.stopper
+        qp.stemmer = database.stemmer if database && database.stemmer
         qp.default_op = xapian_default_op
         qp.stemming_strategy = xapian_stemming_strategy
 
