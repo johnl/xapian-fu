@@ -158,6 +158,10 @@ module XapianFu #:nodoc:
       @store_values = @store_values.flatten.uniq.compact
       @spelling = @options[:spelling]
       @weights_function = @options[:weights]
+      @query_parsers = {}
+      @search_defaults = { :page => 1, :reverse => false,
+        :boolean => true, :boolean_anycase => true, :wildcards => true,
+        :lovehate => true, :spelling => @spelling, :pure_not => false }
     end
 
     # Return a new stemmer object for this database
@@ -252,20 +256,17 @@ module XapianFu #:nodoc:
     # XapianFu::QueryParser
 
     def search(q, options = {})
-      defaults = { :page => 1, :reverse => false,
-        :boolean => true, :boolean_anycase => true, :wildcards => true,
-        :lovehate => true, :spelling => spelling, :pure_not => false }
-      options = defaults.merge(options)
-      page = options[:page].to_i rescue 1
+      options = @search_defaults.merge(options)
+      page = options.fetch(:page, 1).to_i
       page = page > 1 ? page - 1 : 0
       per_page = options[:per_page] || options[:limit] || 10
-      per_page = per_page.to_i rescue 10
+      per_page = per_page.to_i
       offset = page * per_page
 
-      check_at_least = options.include?(:check_at_least) ? options[:check_at_least] : 0
+      check_at_least = options.fetch(:check_at_least, 0)
       check_at_least = self.size if check_at_least == :all
 
-      qp = XapianFu::QueryParser.new({ :database => self }.merge(options))
+      qp = @query_parsers[options] ||= XapianFu::QueryParser.new({ :database => self }.merge(options))
       query = qp.parse_query(q.is_a?(Symbol) ? q : q.to_s)
       query = filter_query(query, options[:filter]) if options[:filter]
       enquiry = Xapian::Enquire.new(ro)
