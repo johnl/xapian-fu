@@ -8,6 +8,9 @@
 
 * Support a `:weight` option when declaring database fields.
 
+* `XapianDb#search` can now receive a `:ranges` option to disable range
+  parsing.
+
 === 1.5.0 (23rd May 2012)
 
 * Support for custom term weights when indexing (Mike Ragalie)

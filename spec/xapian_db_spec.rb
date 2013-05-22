@@ -623,6 +623,25 @@ describe XapianDb do
       docs.map { |d| d.id }.should == [1, 2]
     end
 
+    it "should not parse ranges when no ranges configured" do
+      xdb = XapianDb.new(:fields => {
+        :price => { :type => Integer, :sortable => true, :range_prefix => "$" },
+        :age   => { :type => Integer, :sortable => true }
+      })
+
+      xdb << XapianDoc.new(:price => 10, :age => 40)
+      xdb << XapianDoc.new(:price => 20, :age => 35)
+      xdb << XapianDoc.new(:price => 45, :age => 30)
+
+      docs = xdb.search("$20..40 OR age:40..50", ranges: false)
+
+      docs.should be_empty
+
+      docs = xdb.search("20")
+
+      docs.map { |d| d.id }.should == [2]
+    end
+
     it "should store values declared as to be collapsible" do
       xdb = XapianDb.new(:collapsible => :group_id)
       xdb << XapianDoc.new(:group_id => "666", :author => "Jim Jones")

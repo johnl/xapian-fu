@@ -127,7 +127,7 @@ module XapianFu #:nodoc:
             string,
             prefix
           ))
-        end if database
+        end if database && @options.fetch(:ranges, true)
 
         @query_parser = qp
       end
