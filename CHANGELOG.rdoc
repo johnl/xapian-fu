@@ -11,6 +11,8 @@
 * `XapianDb#search` can now receive a `:ranges` option to disable range
   parsing.
 
+* Facet values are now correctly marked as UTF-8.
+
 === 1.5.0 (23rd May 2012)
 
 * Support for custom term weights when indexing (Mike Ragalie)

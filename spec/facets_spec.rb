@@ -12,15 +12,16 @@ describe "Facets support" do
       :fields => {
         :name      => { :index => true },
         :age       => { :type => Integer, :sortable => true },
-        :height    => { :type => Float, :sortable => true }
+        :height    => { :type => Float, :sortable => true },
+        :city      => { :store => true }
       }
     )
 
-    @xdb << {:name => "John A",   :age => 30, :height => 1.8}
-    @xdb << {:name => "John B",   :age => 35, :height => 1.8}
-    @xdb << {:name => "John C",   :age => 40, :height => 1.7}
-    @xdb << {:name => "John D",   :age => 40, :height => 1.7}
-    @xdb << {:name => "Markus",   :age => 35, :height => 1.7}
+    @xdb << {:name => "John A",   :age => 30, :height => 1.8, city: "NY"}
+    @xdb << {:name => "John B",   :age => 35, :height => 1.8, city: "NY"}
+    @xdb << {:name => "John C",   :age => 40, :height => 1.7, city: "SF"}
+    @xdb << {:name => "John D",   :age => 40, :height => 1.7, city: "NY"}
+    @xdb << {:name => "Markus",   :age => 35, :height => 1.7, city: "LA"}
     @xdb.flush
   end
 
@@ -51,5 +52,13 @@ describe "Facets support" do
     results = @xdb.search(:all, :facets => [:age, :height], :check_at_least => :all)
 
     results.facets[:age].map(&:last).inject(0) { |t,i| t + i }.should == 505
+  end
+
+  it "should return facet values in UTF-8" do
+    results = @xdb.search("john", {:facets => [:city]})
+
+    results.facets[:city].should == [["NY", 3], ["SF", 1]]
+
+    results.facets[:city].first.first.encoding.should == Encoding::UTF_8
   end
 end

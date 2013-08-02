@@ -25,7 +25,9 @@ module XapianFu
 
       options[:spies].each do |name, spy|
         @facets[name] = spy.values.map do |value|
-          [@db.unserialize_value(name, value.term), value.termfreq]
+          term = value.term.force_encoding(Encoding::UTF_8)
+
+          [@db.unserialize_value(name, term), value.termfreq]
         end
       end if options[:spies]
 
