@@ -10,7 +10,7 @@ module XapianFu
       when Xapian::Stopper
         lang
       when false
-        false
+        nil
       else
         lang = lang.to_s.downcase.strip
         if @stoppers[lang]
