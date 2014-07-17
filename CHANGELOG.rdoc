@@ -1,4 +1,4 @@
-=== 1.5.1 (unreleased)
+=== 1.5.1 (17th July 2014)
 
 * You can now customize the parsed query by passing `:query_builder` to
   `XapianDb#search`.
