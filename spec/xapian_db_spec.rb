@@ -48,6 +48,34 @@ describe XapianDb do
     xdb.size.should == 1
   end
 
+  it "closes" do
+    xdb = XapianDb.new(:dir => tmp_dir, :create => true)
+
+    xdb << "Once upon a time"
+    xdb.size.should == 0
+
+    # Make sure we're not using Database#reopen.
+    class << xdb.ro
+      def reopen
+        raise "Shouldn't use reopen when closing"
+      end
+    end
+
+    xdb.close
+    xdb.size.should == 1
+  end
+
+  it "fails when trying to close in the middle of a transaction" do
+    xdb = XapianDb.new(:dir => tmp_dir, :create => true)
+
+    lambda {
+      xdb.transaction do
+        xdb << "Once upon a time"
+        xdb.close
+      end
+    }.should raise_error(XapianFu::ConcurrencyError)
+  end
+
   it "should return a nice string when inspect is called" do
     XapianDb.new.inspect.should =~ /XapianDb/
   end

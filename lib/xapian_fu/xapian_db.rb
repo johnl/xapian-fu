@@ -339,6 +339,17 @@ module XapianFu #:nodoc:
       ro.reopen
     end
 
+    # Closes the database.
+    def close
+      raise ConcurrencyError if @tx_mutex.locked?
+
+      @rw.close if @rw
+      @rw = nil
+
+      @ro.close if @ro
+      @ro = nil
+    end
+
     def serialize_value(field, value, type = nil)
       if sortable_fields.include?(field)
         Xapian.sortable_serialise(value)

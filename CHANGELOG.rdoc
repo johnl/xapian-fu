@@ -1,3 +1,7 @@
+=== (unreleased)
+
+* Added `XapianDb#close` to close both the read and write databases.
+
 === 1.5.1 (17th July 2014)
 
 * You can now customize the parsed query by passing `:query_builder` to
