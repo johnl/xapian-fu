@@ -498,6 +498,28 @@ describe XapianDb do
       xdb.search("liverpool").should be_empty
       xdb.search("city:liverpool").map(&:id).should == [2, 3]
     end
+
+    it "allows further refining of the parsed query" do
+      xdb = XapianDb.new(:dir => tmp_dir, :create => true,
+                         :fields => {
+                           :name => { :index => true },
+                           :age => { :boolean => true },
+                         }
+                        )
+
+      xdb << {:name => "John A", :age => 10}
+      xdb << {:name => "John B", :age => 11}
+
+      xdb.flush
+
+      xdb.search("john").size.should == 2
+
+      builder = lambda do |q|
+        Xapian::Query.new(Xapian::Query::OP_AND, Xapian::Query.new("XAGE10"), q)
+      end
+
+      xdb.search("john", :query_builder => builder).map(&:id).should == [1]
+    end
   end
 
   describe "filtering" do

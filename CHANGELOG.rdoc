@@ -1,5 +1,8 @@
 === 1.5.1 (unreleased)
 
+* You can now customize the parsed query by passing `:query_builder` to
+  `XapianDb#search`.
+
 * Add ability to pass a `PostingSource` when searching.
 
 * Add ability to specify how many documents to sample when searching.

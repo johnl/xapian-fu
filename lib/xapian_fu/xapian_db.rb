@@ -248,6 +248,10 @@ module XapianFu #:nodoc:
     # sample every document in the database. Be aware that this can hurt
     # your query performance.
     #
+    # The <tt>:query_builder</tt> option allows you to pass a proc that
+    # will return the final query to be run. The proc receives the parsed
+    # query as its only argument.
+    #
     # The first parameter can also be <tt>:all</tt> or
     # <tt>:nothing</tt>, to match all documents or no documents
     # respectively.
@@ -269,6 +273,11 @@ module XapianFu #:nodoc:
       qp = @query_parsers[options] ||= XapianFu::QueryParser.new({ :database => self }.merge(options))
       query = qp.parse_query(q.is_a?(Symbol) ? q : q.to_s)
       query = filter_query(query, options[:filter]) if options[:filter]
+
+      if options.include?(:query_builder)
+        query = options[:query_builder].call(query)
+      end
+
       enquiry = Xapian::Enquire.new(ro)
       setup_ordering(enquiry, options[:order], options[:reverse])
       if options[:collapse]
