@@ -547,6 +547,15 @@ describe XapianDb do
       end
 
       xdb.search("john", :query_builder => builder).map(&:id).should == [1]
+
+      # The query builder should be called before filtering.
+      builder = lambda do |q|
+        Xapian::Query.new(Xapian::Query::OP_AND_MAYBE, Xapian::Query.new(""), q)
+      end
+
+      results = xdb.search("john", filter: {age: 10}, query_builder: builder)
+
+      results.map(&:id).should == [1]
     end
   end
 

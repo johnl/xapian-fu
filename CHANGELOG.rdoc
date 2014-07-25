@@ -1,6 +1,9 @@
-=== (unreleased)
+=== 1.5.2 (25th July 2014)
 
 * Added `XapianDb#close` to close both the read and write databases.
+
+* Fixed a bug that caused the `:query_builder` to take precedence over
+  the given filters.
 
 === 1.5.1 (17th July 2014)
 
