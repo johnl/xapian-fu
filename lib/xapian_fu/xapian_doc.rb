@@ -268,19 +268,33 @@ module XapianFu #:nodoc:
       tg.stemmer = stemmer
       tg.set_flags Xapian::TermGenerator::FLAG_SPELLING if db.spelling
       index_method = db.index_positions ? :index_text : :index_text_without_positions
-      fields.each do |k,v|
+      fields.each do |k,o|
         next if unindexed_fields.include?(k)
-        if v.respond_to?(:to_xapian_fu_string)
-          v = v.to_xapian_fu_string
+
+        if db.fields[k] == Array
+          values = Array(o)
         else
-          v = v.to_s
+          values = [o]
         end
-        # get the custom term weight if a weights function exists
-        weight = db.weights_function ? db.weights_function.call(k, v, fields).to_i : db.field_weights[k]
-        # add value with field name
-        tg.send(index_method, v, weight, 'X' + k.to_s.upcase)
-        # add value without field name
-        tg.send(index_method, v, weight)
+
+        values.each do |v|
+          if v.respond_to?(:to_xapian_fu_string)
+            v = v.to_xapian_fu_string
+          else
+            v = v.to_s
+          end
+
+          # get the custom term weight if a weights function exists
+          weight = db.weights_function ? db.weights_function.call(k, v, fields).to_i : db.field_weights[k]
+          # add value with field name
+          tg.send(index_method, v, weight, 'X' + k.to_s.upcase)
+          # add value without field name
+          tg.send(index_method, v, weight)
+
+          if db.field_options[k] && db.field_options[k][:exact]
+            xapian_document.add_term("X#{k.to_s.upcase}#{v.to_s.downcase}", weight)
+          end
+        end
       end
 
       db.boolean_fields.each do |name|

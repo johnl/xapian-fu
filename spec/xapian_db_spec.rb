@@ -289,6 +289,23 @@ describe XapianDb do
       xdb.search("red").map(&:id).should == [1, 2]
     end
 
+    it "should index arrays with exact option" do
+      xdb = XapianDb.new(:dir => tmp_dir, :create => true,
+                         :fields => {
+                           :colors => { :index => true, :type => Array, :exact => true }
+                         })
+
+      xdb << {:colors => ["light blue", "red"]}
+
+      xdb.flush
+
+      doc = xdb.documents.find(1)
+
+      terms = doc.terms.map(&:term)
+
+      terms.should include("XCOLORSlight blue")
+      terms.should include("XCOLORSred")
+    end
   end
 
   describe "search" do

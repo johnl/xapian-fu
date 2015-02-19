@@ -137,6 +137,7 @@ module XapianFu #:nodoc:
     # Whether this db will generate a spelling dictionary during indexing
     attr_reader :spelling
     attr_reader :sortable_fields
+    attr_reader :field_options
     attr_accessor :weights_function
     attr :field_weights
 
@@ -151,6 +152,7 @@ module XapianFu #:nodoc:
       @language = @options.fetch(:language, :english)
       @stemmer = @options.fetch(:stemmer, @language)
       @stopper = @options.fetch(:stopper, @language)
+      @field_options = {}
       setup_fields(@options[:fields])
       @store_values << @options[:store]
       @store_values << @options[:sortable]
@@ -444,6 +446,7 @@ module XapianFu #:nodoc:
         @boolean_fields << name if opts[:boolean]
         @fields[name] = opts[:type]
         @field_weights[name] = opts[:weight] if opts.include?(:weight)
+        @field_options[name] = opts
       end
       @fields
     end
