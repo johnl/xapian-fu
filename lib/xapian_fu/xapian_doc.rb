@@ -251,6 +251,16 @@ module XapianFu #:nodoc:
       db ? db.unindexed_fields : []
     end
 
+    # Array of field names not to index with field names
+    def fields_without_field_names
+      db ? db.fields_without_field_names : []
+    end
+
+    # Array of field names to index with field names only
+    def fields_with_field_names_only
+      db ? db.fields_with_field_names_only : []
+    end
+
     # Add all the fields to be stored as XapianDb values
     def add_values_to_xapian_document
       db.store_values.collect do |key|
@@ -287,9 +297,9 @@ module XapianFu #:nodoc:
           # get the custom term weight if a weights function exists
           weight = db.weights_function ? db.weights_function.call(k, v, fields).to_i : db.field_weights[k]
           # add value with field name
-          tg.send(index_method, v, weight, 'X' + k.to_s.upcase)
+          tg.send(index_method, v, weight, 'X' + k.to_s.upcase) unless fields_without_field_names.include?(k)
           # add value without field name
-          tg.send(index_method, v, weight)
+          tg.send(index_method, v, weight) unless fields_with_field_names_only.include?(k)
 
           if db.field_options[k] && db.field_options[k][:exact]
             xapian_document.add_term("X#{k.to_s.upcase}#{v.to_s.downcase}", weight)

@@ -98,6 +98,28 @@ module XapianFu #:nodoc:
   # and sort them efficiently (without having to resort to storing
   # leading zeros or anything like that).
   #
+  # == Indexing options
+  #
+  # If <tt>:index</tt> is <tt>false</tt>, then the field will not be tokenized,
+  # or stemmed or stopped. It will only be searchable by its entire exact
+  # contents. Useful for fields that only exact matches will make sense for,
+  # like slugs, identifiers or keys.
+  #
+  # If <tt>:index</tt> is <tt>true</tt> (the default) then the field will be
+  # tokenized, stemmed and stopped twice, once with the field name and once
+  # without. This allows you to do both search like "name:lily" and simply
+  # "lily", but it does require that the full text of the field content is
+  # indexed twice and will increase the size of your index on-disk.
+  #
+  # If you know you will never need to search the field using its field name,
+  # then you can set <tt>:index</tt> to <tt>:without_field_names</tt> and only
+  # one tokenization pass will be done, without the field names as token
+  # prefixes.
+  #
+  # If you know you will only ever search the field using its field name, then
+  # you can set <tt>:index</tt> to <tt>:with_field_names_only</tt> and only one
+  # tokenization pass will be done, with only the fieldnames as token prefixes.
+  #
   # == Term Weights
   #
   # The <tt>:weights</tt> option accepts a Proc or Lambda that sets
@@ -132,6 +154,11 @@ module XapianFu #:nodoc:
     attr_reader :fields
     # An array of fields that will not be indexed
     attr_reader :unindexed_fields
+    # An array of fields to be indexed without their field names
+    attr_reader :fields_without_field_names
+    # An array of fields to be indexed only with their field names
+    attr_reader :fields_with_field_names_only
+
     # An array of fields that will be treated as boolean terms
     attr_reader :boolean_fields
     # Whether this db will generate a spelling dictionary during indexing
@@ -412,6 +439,8 @@ module XapianFu #:nodoc:
     def setup_fields(field_options)
       @fields = { }
       @unindexed_fields = []
+      @fields_without_field_names = []
+      @fields_with_field_names_only = []
       @store_values = []
       @sortable_fields = {}
       @boolean_fields = []
@@ -443,6 +472,8 @@ module XapianFu #:nodoc:
         @store_values << name if opts[:store]
         @sortable_fields[name] = {:range_prefix => opts[:range_prefix], :range_postfix => opts[:range_postfix]} if opts[:sortable]
         @unindexed_fields << name if opts[:index] == false
+        @fields_without_field_names << name if opts[:index] == :without_field_names
+        @fields_with_field_names_only << name if opts[:index] == :with_field_names_only
         @boolean_fields << name if opts[:boolean]
         @fields[name] = opts[:type]
         @field_weights[name] = opts[:weight] if opts.include?(:weight)

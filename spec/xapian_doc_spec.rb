@@ -98,6 +98,34 @@ describe XapianDoc do
       terms.should_not include 'leach'
     end
 
+    it "should tokenize fields without field names for fields declared as such" do
+      xdb = XapianDb.new(:fields => { :name => { :index => :without_field_names } })
+      xdoc = xdb.documents.new({ :name => 'John Leach', :quote => 'Xapian Rocks' }).to_xapian_document
+      terms = xdoc.terms.collect { |t| t.term }
+      terms.should include 'john'
+      terms.should_not include 'XNAMEjohn'
+      terms.should include 'leach'
+      terms.should_not include 'XNAMEleach'
+      terms.should include 'xapian'
+      terms.should include 'XQUOTExapian'
+      terms.should include 'rocks'
+      terms.should include 'XQUOTErocks'
+    end
+
+    it "should tokenize fields exclusively with field names for fields declared as such" do
+      xdb = XapianDb.new(:fields => { :name => { :index => :with_field_names_only } })
+      xdoc = xdb.documents.new({ :name => 'John Leach', :quote => 'Xapian Rocks' }).to_xapian_document
+      terms = xdoc.terms.collect { |t| t.term }
+      terms.should_not include 'john'
+      terms.should include 'XNAMEjohn'
+      terms.should_not include 'leach'
+      terms.should include 'XNAMEleach'
+      terms.should include 'xapian'
+      terms.should include 'XQUOTExapian'
+      terms.should include 'rocks'
+      terms.should include 'XQUOTErocks'
+    end
+
     it "should convert Time instances to a useful format when tokenizing" do
       time = Time.now
       xdb = XapianDb.new

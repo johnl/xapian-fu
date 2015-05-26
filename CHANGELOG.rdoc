@@ -1,3 +1,8 @@
+=== 1.5.4 (unreleased)
+
+* Add ability to index field with or without field names
+  (:without_field_names, :with_field_names_only)
+
 === 1.5.3 (19th February 2015)
 
 * Added support for indexing multiple terms without stemming (`:exact`).
