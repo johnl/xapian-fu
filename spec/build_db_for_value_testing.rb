@@ -2,9 +2,9 @@
 #
 
 require 'date'
-require File.join(File.dirname(__FILE__), '../lib/xapian_fu')
+require 'xapian_fu'
 include XapianFu
-require File.join(File.dirname(__FILE__), 'fixtures/film_data')
+require_relative 'fixtures/film_data'
 require 'fileutils'
 
 
