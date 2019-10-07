@@ -5,14 +5,11 @@ branches:
     - master
 
 rvm:
-  - 1.8.7
   - 1.9.3
-
-gemfile:
-  - .travis/Gemfile
-
-before_install:
- - sudo apt-get update -qq
- - sudo apt-get install -qq libxapian22 libxapian-dev
- - wget https://gist.github.com/raw/4486398/31a002b6c9eef194ad7d2d55317e8a14d7ca2ad6/install.sh -O /tmp/xapian-bindings.sh
- - sudo bash /tmp/xapian-bindings.sh
+  - 2.0
+  - 2.1
+  - 2.2
+  - 2.3
+  - 2.4
+  - 2.5
+  - 2.6
