@@ -63,6 +63,27 @@ describe XapianDocValueAccessor do
     end
   end
 
+  it "should store fields defined as Integer as packed double-precision float, network byte order" do
+    xdb = XapianDb.new(:fields => { :number => { :type => Integer, :store => true } })
+    [
+      (-0x1fffffffffffff..-0x1fffffffffffff + 10).to_a,
+      (0x1fffffffffffff-10..0x1fffffffffffff).to_a
+    ].flatten.each do |number|
+      doc = xdb.documents.new(:number => number)
+      doc.values.store(:number, number, Integer).should == number
+      doc.values.fetch(:number, Integer).should == number
+      doc.to_xapian_document.values.first.value.should == [number].pack("G")
+    end
+  end
+
+  it "should raise an error when attempting to store Integer values bigger or smaller than can be stored" do
+    xdb = XapianDb.new(:fields => { :number => { :type => Integer, :store => true } })
+    [-(0x1fffffffffffff+1), 0x1fffffffffffff+1].each do |number|
+      doc = xdb.documents.new(:number => number)
+      lambda {  doc.values.store(:number, number, Integer) }.should raise_error XapianFu::ValueOutOfBounds
+    end
+  end
+
   it "should store fields defined as Float as packed double-precision float, network byte order" do
     xdb = XapianDb.new(:fields => { :number => { :type => Float, :store => true } })
     [-0.303393984588383833, 8.448488388488384, 1.0].each do |number|

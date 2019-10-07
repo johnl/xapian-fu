@@ -2,16 +2,6 @@ require 'zlib'
 
 class Integer #:nodoc:
   def self.to_xapian_fu_storage_value(value)
-    [value].pack("G")
-  end
-
-  def self.from_xapian_fu_storage_value(value)
-    value.unpack("G").first.truncate rescue nil
-  end
-end
-
-class Bignum #:nodoc:
-  def self.to_xapian_fu_storage_value(value)
     if value > 0x1fffffffffffff or value < -0x1fffffffffffff
       raise XapianFu::ValueOutOfBounds
     end
@@ -23,13 +13,28 @@ class Bignum #:nodoc:
   end
 end
 
-class Fixnum #:nodoc:
-  def self.to_xapian_fu_storage_value(value)
-    [value].pack("G")
+if RUBY_VERSION < '2.4'
+  class Bignum #:nodoc:
+    def self.to_xapian_fu_storage_value(value)
+      if value > 0x1fffffffffffff or value < -0x1fffffffffffff
+        raise XapianFu::ValueOutOfBounds
+      end
+      [value].pack("G")
+    end
+
+    def self.from_xapian_fu_storage_value(value)
+      value.unpack("G").first.truncate rescue nil
+    end
   end
 
-  def self.from_xapian_fu_storage_value(value)
-    value.unpack("G").first.truncate rescue nil
+  class Fixnum #:nodoc:
+    def self.to_xapian_fu_storage_value(value)
+      [value].pack("G")
+    end
+
+    def self.from_xapian_fu_storage_value(value)
+      value.unpack("G").first.truncate rescue nil
+    end
   end
 end
 
