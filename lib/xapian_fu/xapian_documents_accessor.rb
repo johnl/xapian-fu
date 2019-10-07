@@ -69,11 +69,11 @@ module XapianFu
         # for :id we can use lastdocid
         find(@xdb.ro.lastdocid) rescue nil
       else
-        # for other values, we do a search ordered by that key in descening order
+        # for other values, we do a search ordered by that key in descending order
         query = Xapian::Query.new(Xapian::Query::OP_VALUE_GE, XapianDocValueAccessor.value_key(key), "0")
         e = Xapian::Enquire.new(@xdb.ro)
         e.query = query
-        e.sort_by_value!(XapianDocValueAccessor.value_key(key))
+        e.sort_by_value!(XapianDocValueAccessor.value_key(key), true)
         r = e.mset(0, 1).matches.first
         find(r.docid) rescue nil
       end
