@@ -38,6 +38,27 @@ describe XapianDb do
     File.exists?(tmp_dir).should be_true
   end
 
+  it "should create a glass database when type is glass" do
+    pending "this version of xapian doesn't support glass" unless defined?(Xapian::DB_BACKEND_GLASS)
+    glassdir = tmp_dir + 'glass'
+    XapianDb.new(:dir => glassdir, :create => true, :type => :glass).rw
+    File.exists?(glassdir + '/iamglass').should == true
+  end
+
+  it "should create a chert database when type is chert" do
+    pending "this version of xapian doesn't support chert" unless defined?(Xapian::DB_BACKEND_CHERT)
+    chertdir = tmp_dir + 'chert'
+    XapianDb.new(:dir => chertdir, :create => true, :type => :chert).rw
+    File.exists?(chertdir + '/iamchert').should == true
+  end
+
+  it "should raise an exception when type is unrecognised" do
+    chertdir = tmp_dir + 'whatever'
+    lambda {
+      XapianDb.new(:dir => chertdir, :create => true, :type => :whatever).rw
+    }.should raise_error(XapianFu::XapianFuError)
+  end
+
   it "should flush documents to the index when flush is called" do
     xdb = XapianDb.new(:dir => tmp_dir, :create => true)
     xdb.flush

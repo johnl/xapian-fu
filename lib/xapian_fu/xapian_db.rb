@@ -38,6 +38,11 @@ module XapianFu #:nodoc:
   # XapianDb to wipe the current on-disk database and start afresh.
   # The default is <tt>false</tt>.
   #
+  # Setting the <tt>:type</tt> option to either :glass or :chert will force that
+  # database backend, if supported. Leave as nil to auto-detect existing
+  # databases and create new databases with the library default (recommended).
+  # Requires xapian >=1.4
+  #
   #   db = XapianDb.new(:dir => '/tmp/mydb', :create => true)
   #
   # == Language, Stemmers and Stoppers
@@ -175,6 +180,18 @@ module XapianFu #:nodoc:
       @db_flag = Xapian::DB_OPEN
       @db_flag = Xapian::DB_CREATE_OR_OPEN if @options[:create]
       @db_flag = Xapian::DB_CREATE_OR_OVERWRITE if @options[:overwrite]
+      case @options[:type]
+      when :glass
+        raise XapianFuError.new("type glass not recognised") unless defined?(Xapian::DB_BACKEND_GLASS)
+        @db_flag |= Xapian::DB_BACKEND_GLASS
+      when :chert
+        raise XapianFuError.new("type chert not recognised") unless defined?(Xapian::DB_BACKEND_CHERT)
+        @db_flag |= Xapian::DB_BACKEND_CHERT
+      when nil
+        # use library defaults
+      else
+        raise XapianFuError.new("type #{@options[:type].inspect} not recognised")
+      end
       @tx_mutex = Mutex.new
       @language = @options.fetch(:language, :english)
       @stemmer = @options.fetch(:stemmer, @language)
