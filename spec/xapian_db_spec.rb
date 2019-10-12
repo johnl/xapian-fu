@@ -59,6 +59,12 @@ describe XapianDb do
     }.should raise_error(XapianFu::XapianFuError)
   end
 
+  it "should merge in additional_flag" do
+    xdb = XapianDb.new(:dir => tmp_dir, :overwrite => true, :additional_flag => 0x32)
+    xdb.db_flag.should_not == 0x32
+    (xdb.db_flag & 0x32).should == 0x32
+  end
+
   it "should flush documents to the index when flush is called" do
     xdb = XapianDb.new(:dir => tmp_dir, :create => true)
     xdb.flush

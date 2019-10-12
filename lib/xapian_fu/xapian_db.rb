@@ -180,6 +180,7 @@ module XapianFu #:nodoc:
       @db_flag = Xapian::DB_OPEN
       @db_flag = Xapian::DB_CREATE_OR_OPEN if @options[:create]
       @db_flag = Xapian::DB_CREATE_OR_OVERWRITE if @options[:overwrite]
+      @db_flag |= @options[:additional_flag] if @options[:additional_flag]
       case @options[:type]
       when :glass
         raise XapianFuError.new("type glass not recognised") unless defined?(Xapian::DB_BACKEND_GLASS)
