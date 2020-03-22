@@ -20,7 +20,7 @@ Hash with full text indexing (and ACID transactions).
 === Xapian Bindings
 
 Xapian Fu requires the Xapian Ruby bindings to be available.  On
-Debian/Ubuntu, you can install the `libxapian-ruby1.8` package to get
+Debian/Ubuntu, you can install the `ruby-xapian` package to get
 them.  Alternatively, you can install the `xapian-ruby` gem, which
 reportedly will also provide them.  You can also just get the
 upstream Xapian release and manually install it.

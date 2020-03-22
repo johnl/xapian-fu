@@ -29,5 +29,5 @@ Gem::Specification.new do |s|
   s.add_development_dependency("rdoc", "~> 4")
 
   s.requirements << "libxapian-dev, or the xapian-ruby gem"
-  s.required_ruby_version = '>= 1.9.3'
+  s.required_ruby_version = '>= 2.1.0'
 end
