@@ -62,6 +62,10 @@ module XapianFu #:nodoc:
   #
   #   db = XapianDb.new(:language => :italian, :stopper => false)
   #
+  # The <tt>:stopper_strategy</tt> option specifies the default stop strategy
+  # that will be used when indexing and can be: <tt>:none</tt>, <tt>:all</tt> or
+  # <tt>:stemmed</tt>. Defaults to <tt>:stemmed</tt>
+  #
   # == Spelling suggestions
   #
   # The <tt>:spelling</tt> option controls generation of a spelling
@@ -172,6 +176,8 @@ module XapianFu #:nodoc:
     attr_reader :field_options
     attr_accessor :weights_function
     attr :field_weights
+    # The default stopper strategy
+    attr_accessor :stopper_strategy
 
     def initialize( options = { } )
       @options = { :index_positions => true, :spelling => true }.merge(options)
@@ -196,6 +202,7 @@ module XapianFu #:nodoc:
       @language = @options.fetch(:language, :english)
       @stemmer = @options.fetch(:stemmer, @language)
       @stopper = @options.fetch(:stopper, @language)
+      @stopper_strategy = @options.fetch(:stopper_strategy, :stemmed)
       @field_options = {}
       setup_fields(@options[:fields])
       @store_values << @options[:store]

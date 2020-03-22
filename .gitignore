@@ -2,3 +2,4 @@ html/
 doc/
 *.gem
 Gemfile.lock
+vendor/

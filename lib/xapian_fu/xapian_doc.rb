@@ -227,6 +227,27 @@ module XapianFu #:nodoc:
       end
     end
 
+    STOPPER_STRATEGIES = {
+      :none    => 0,
+      :all     => 1,
+      :stemmed => 2
+    }
+
+    def stopper_strategy
+      if @stopper_strategy
+        @stopper_strategy
+      else
+        @stopper_strategy =
+          if ! @options[:stopper_strategy].nil?
+            @options[:stopper_strategy]
+          elsif db
+            db.stopper_strategy
+          else
+            :stemmed
+          end
+      end
+    end
+
     # Return this document's language which is set on initialize, inherited
     # from the database or defaults to :english
     def language
@@ -276,6 +297,7 @@ module XapianFu #:nodoc:
       tg.document = xapian_document
       tg.stopper = stopper if stopper
       tg.stemmer = stemmer
+      tg.set_stopper_strategy(XapianDoc::STOPPER_STRATEGIES.fetch(stopper_strategy, 2))
       tg.set_flags Xapian::TermGenerator::FLAG_SPELLING if db.spelling
       index_method = db.index_positions ? :index_text : :index_text_without_positions
       fields.each do |k,o|
