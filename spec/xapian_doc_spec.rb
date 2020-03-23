@@ -261,4 +261,38 @@ describe XapianDoc do
     end
   end
 
+  describe "stopper_strategy" do
+    it "should stop all stop words when stopper_strategy is set to :all " do
+      xdb = XapianDb.new(:stopper_strategy => :all )
+      xdoc = xdb.documents.new("She fished for fish").to_xapian_document
+      terms = xdoc.terms.collect { |t| t.term }
+      terms.should_not include "for"
+      terms.should include "fish"
+    end
+
+    it "should stop stemmed words by when stopper_strategy is set to :stemmed " do
+      xdb = XapianDb.new(:stopper_strategy => :stemmed)
+      xdoc = xdb.documents.new("She fished for fish").to_xapian_document
+      terms = xdoc.terms.collect { |t| t.term }
+      terms.should_not include "Zfor"
+      terms.should include "fish"
+    end
+
+    it "should stop no words by when stopper_strategy is set to :none " do
+      xdb = XapianDb.new(:stopper_strategy => :none)
+      xdoc = xdb.documents.new("She fished for fish").to_xapian_document
+      terms = xdoc.terms.collect { |t| t.term }
+      terms.should include "Zfor"
+      terms.should include "for"
+      terms.should include "fish"
+    end
+
+    it "should stop stemmed words by default " do
+      xdb = XapianDb.new
+      xdoc = xdb.documents.new("She fished for fish").to_xapian_document
+      terms = xdoc.terms.collect { |t| t.term }
+      terms.should_not include "Zfor"
+      terms.should include "fish"
+    end
+  end
 end
