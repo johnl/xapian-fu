@@ -4,7 +4,8 @@ require 'xapian_fu/version'
 Gem::Specification.new do |s|
   s.name    = 'xapian-fu'
   s.version = XapianFu::VERSION
-  s.date    = '2019-10-07'
+  k
+  s.date    = '2020-03-23'
   s.license = 'MIT'
   s.summary = "A Ruby interface to the Xapian search engine"
   s.description = "A library to provide a more Ruby-like interface to the Xapian search engine."
