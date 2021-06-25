@@ -522,6 +522,14 @@ describe XapianDb do
       xdb.search("jon", :synonyms => true).should_not be_empty
     end
 
+    it "should recognize cjk" do
+      xdb = XapianDb.new(cjk: true)
+      doc1 = xdb << "生日快乐"
+      doc2 = xdb << "快乐"
+      xdb.search('快乐').should == [doc2, doc1]
+      xdb.search('日').should == [doc1]
+    end
+
     describe "with special queries" do
       before do
         @xdb = XapianDb.new
