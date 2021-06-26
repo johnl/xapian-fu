@@ -172,6 +172,7 @@ module XapianFu #:nodoc:
     attr_reader :boolean_fields
     # Whether this db will generate a spelling dictionary during indexing
     attr_reader :spelling
+    attr_reader :cjk
     attr_reader :sortable_fields
     attr_reader :field_options
     attr_accessor :weights_function
@@ -210,6 +211,7 @@ module XapianFu #:nodoc:
       @store_values << @options[:collapsible]
       @store_values = @store_values.flatten.uniq.compact
       @spelling = @options[:spelling]
+      @cjk = @options[:cjk]
       @weights_function = @options[:weights]
     end
 
