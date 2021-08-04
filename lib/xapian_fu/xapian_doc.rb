@@ -292,15 +292,15 @@ module XapianFu #:nodoc:
 
     # Run the Xapian term generator against this documents text
     def generate_terms
-      flags = 0
-      flags |= Xapian::TermGenerator::FLAG_SPELLING if db.spelling
-      flags |= Xapian::TermGenerator::FLAG_CJK_NGRAM if db.cjk
       tg = Xapian::TermGenerator.new
       tg.database = db.rw
       tg.document = xapian_document
       tg.stopper = stopper if stopper
       tg.stemmer = stemmer
       tg.set_stopper_strategy(XapianDoc::STOPPER_STRATEGIES.fetch(stopper_strategy, 2))
+      flags = 0
+      flags |= Xapian::TermGenerator::FLAG_SPELLING if db.spelling
+      flags |= Xapian::TermGenerator::FLAG_CJK_NGRAM if db.cjk
       tg.set_flags flags
       index_method = db.index_positions ? :index_text : :index_text_without_positions
       fields.each do |k,o|
