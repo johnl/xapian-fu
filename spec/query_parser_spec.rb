@@ -44,6 +44,25 @@ describe QueryParser do
       qp.parse_query(:nothing).empty?.should be_true
     end
 
+    it "should use cjk ngram parser" do
+      qp = QueryParser.new(cjk: true)
+      terms = qp.parse_query("生日快乐").terms.collect { |t| t.term }
+      terms.should include "生日".force_encoding('ASCII-8BIT')
+      terms.should include "快乐".force_encoding('ASCII-8BIT')
+      terms.should include "生".force_encoding('ASCII-8BIT')
+      terms.should include "乐".force_encoding('ASCII-8BIT')
+    end
+
+    it "should use the database's cjk flag" do
+      xdb = XapianDb.new(cjk: true)
+      qp = QueryParser.new(database: xdb)
+      terms = qp.parse_query("生日快乐").terms.collect { |t| t.term }
+      terms.should include "生日".force_encoding('ASCII-8BIT')
+      terms.should include "快乐".force_encoding('ASCII-8BIT')
+      terms.should include "生".force_encoding('ASCII-8BIT')
+      terms.should include "乐".force_encoding('ASCII-8BIT')
+    end
+
   end
 
 end
