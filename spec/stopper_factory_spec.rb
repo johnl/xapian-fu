@@ -9,8 +9,8 @@ describe StopperFactory do
     it "should return a SimpleStopper loaded with the given languages stop words" do
       stopper = StopperFactory.stopper_for(:english)
       stopper.should be_a_kind_of Xapian::SimpleStopper
-      stopper.call("and").should be_true
-      stopper.call("theremin").should_not be_true
+      stopper.call("and").should be_truthy
+      stopper.call("theremin").should_not be_truthy
     end
 
     it "should return the given stopper unmodified if given a Xapian::Stopper object" do

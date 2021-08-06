@@ -22,7 +22,7 @@ describe XapianDb do
     it "should make an on-disk database when given a :dir option" do
       xdb = XapianDb.new(:dir => tmp_dir, :create => true)
       xdb.rw
-      File.exists?(tmp_dir).should be_true
+      File.exists?(tmp_dir).should be_truthy
       xdb.should respond_to(:dir)
       xdb.dir.should == tmp_dir
       xdb.rw.should be_a_kind_of(Xapian::WritableDatabase)
@@ -33,9 +33,9 @@ describe XapianDb do
 
   it "should lazily create the on-disk database when rw is used" do
     xdb = XapianDb.new(:dir => tmp_dir, :create => true)
-    File.exists?(tmp_dir).should be_false
+    File.exists?(tmp_dir).should be_falsey
     xdb.rw
-    File.exists?(tmp_dir).should be_true
+    File.exists?(tmp_dir).should be_truthy
   end
 
   it "should create a glass database when type is glass" do
@@ -436,14 +436,17 @@ describe XapianDb do
 
     it "should do phrase matching by default when then :default_op option is :phrase" do
       pending
+      fail
     end
 
     it "should do AND_MAYBE matching by default when the :default_op option is :and_maybe" do
       pending
+      fail
     end
 
     it "should do PURE_NOT matching by default when the :default_op option is :pure_not" do
       pending
+      fail
     end
 
     it "should page results when given the :page and :per_page options" do

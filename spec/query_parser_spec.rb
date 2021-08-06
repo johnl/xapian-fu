@@ -40,8 +40,8 @@ describe QueryParser do
     it "should turn :all into a query with no terms" do
       qp = QueryParser.new
       qp.parse_query(:all).terms.should == []
-      qp.parse_query(:all).empty?.should be_false
-      qp.parse_query(:nothing).empty?.should be_true
+      qp.parse_query(:all).empty?.should be_falsey
+      qp.parse_query(:nothing).empty?.should be_truthy
     end
 
   end
