@@ -32,9 +32,8 @@ module XapianFu
     def self.stop_words_for(lang)
       raise UnsupportedStopperLanguage, lang.to_s unless File.exists?(stop_words_filename(lang))
       words = []
-      # Open files with correct encoding in Ruby 1.9
-      open_args = [stop_words_filename(lang), "r"]
-      open_args << { :encoding => "UTF-8" } if String.new.respond_to? :encoding
+      # Open files with correct encoding
+      open_args = [stop_words_filename(lang), "r:UTF-8"]
       open(*open_args) do |f|
         while line = f.readline rescue nil
           words << line.split(" ", 2).first.downcase.strip  unless line =~ /^ +|^$|^\|/
