@@ -4,4 +4,5 @@ gemspec
 
 group :test do
   gem "xapian-ruby", "~> 1.4.9"
+  gem "open-uri"
 end

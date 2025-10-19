@@ -261,8 +261,9 @@ perhaps by reindexing once in a while.
 = More Info
 
 Author::  John Leach  (mailto:john@johnleach.co.uk)
-Copyright:: Copyright (c) 2009-2012 John Leach
+Copyright:: Copyright (c) 2009-2025 John Leach
 License:: MIT (The Xapian library is GPL)
 Mailing list:: http://rubyforge.org/mailman/listinfo/xapian-fu-discuss
 Web page:: http://johnleach.co.uk/documents/xapian-fu
 Github:: http://github.com/johnl/xapian-fu/tree/master
+Stopwords from: https://github.com/stopwords-iso/stopwords-iso Copyright Gene Diaz, released under MIT license.

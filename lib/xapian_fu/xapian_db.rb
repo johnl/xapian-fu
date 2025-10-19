@@ -58,6 +58,9 @@ module XapianFu #:nodoc:
   # :portuguese, :romanian, :russian, :spanish, :swedish,
   # :turkish</tt>.  Set it to <tt>false</tt> to specify none.
   #
+  # There are more stoppers available than stemmers. See
+  # <tt>lib/xapian_fu/stopwords/*.txt</tt> for a complete list.
+  #
   # The default for all is <tt>:english</tt>.
   #
   #   db = XapianDb.new(:language => :italian, :stopper => false)

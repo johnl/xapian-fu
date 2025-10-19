@@ -203,7 +203,7 @@ describe XapianDoc do
     it "should allow setting the stopper on initialisation" do
       xdb = XapianDb.new(:stopper => :english)
       xdoc = xdb.documents.new("And they made a cake", :stopper => :french)
-      xdoc.stopper.call("ayantes").should == true
+      xdoc.stopper.call("apres").should == true
       xdoc.stopper.call("and").should == false
     end
 
