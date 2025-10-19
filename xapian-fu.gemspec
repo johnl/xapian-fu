@@ -23,7 +23,7 @@ Gem::Specification.new do |s|
 
   s.extra_rdoc_files = ["README.rdoc", "LICENSE", "CHANGELOG.rdoc"]
 
-  s.add_development_dependency("rspec", "~> 2.7")
+  s.add_development_dependency("rspec", "~> 2.7.0")
   s.add_development_dependency("rake", "~> 0")
   s.add_development_dependency("irb", "~> 0")
   s.add_development_dependency("rdoc", "~> 4")
